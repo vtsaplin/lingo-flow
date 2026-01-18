@@ -118,22 +118,35 @@ export function SidebarNav() {
                 const isExpanded = expandedTopics.has(topic.id);
                 const hasActiveText = topic.texts?.some(t => isTextActive(topic.id, t.id));
 
+                const isTopicActive = currentPath === `/topic/${topic.id}`;
+
                 return (
                   <Collapsible 
                     key={topic.id} 
                     open={isExpanded || hasActiveText}
                     onOpenChange={() => toggleTopic(topic.id)}
                   >
-                    <CollapsibleTrigger asChild>
-                      <div 
-                        className="group flex items-center justify-between px-3 py-2.5 rounded-md text-sm transition-colors cursor-pointer text-foreground hover:bg-muted"
-                        data-testid={`topic-${topic.id}`}
+                    <div 
+                      className={`group flex items-center justify-between px-3 py-2.5 rounded-md text-sm transition-colors ${
+                        isTopicActive 
+                          ? "bg-primary/10 text-primary" 
+                          : "text-foreground hover:bg-muted"
+                      }`}
+                      data-testid={`topic-${topic.id}`}
+                    >
+                      <Link 
+                        href={`/topic/${topic.id}`}
+                        className="flex items-center gap-3 overflow-hidden flex-1 cursor-pointer"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="flex items-center gap-3 overflow-hidden">
-                          <BookOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
-                          <span className="truncate font-medium">{topic.title}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
+                        <BookOpen className={`h-4 w-4 shrink-0 ${isTopicActive ? "text-primary" : "text-muted-foreground"}`} />
+                        <span className="truncate font-medium">{topic.title}</span>
+                      </Link>
+                      <CollapsibleTrigger asChild>
+                        <button 
+                          className="flex items-center gap-1 p-1 rounded hover:bg-muted/50 transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           {hasTexts && (
                             <span className="text-xs text-muted-foreground">
                               {topic.texts.length}
@@ -144,9 +157,9 @@ export function SidebarNav() {
                           ) : (
                             <ChevronRight className="h-4 w-4 text-muted-foreground" />
                           )}
-                        </div>
-                      </div>
-                    </CollapsibleTrigger>
+                        </button>
+                      </CollapsibleTrigger>
+                    </div>
                     
                     {hasTexts && (
                       <CollapsibleContent>

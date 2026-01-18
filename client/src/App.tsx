@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import TopicView from "@/pages/TopicView";
+import TopicOverview from "@/pages/TopicOverview";
 import { SidebarNav } from "@/components/SidebarNav";
 
 function Router() {
@@ -15,6 +16,7 @@ function Router() {
       <main className="flex-1 pt-16 md:pt-0 h-screen flex flex-col">
         <Switch>
           <Route path="/" component={Home} />
+          <Route path="/topic/:topicId" component={TopicOverview} />
           <Route path="/topic/:topicId/text/:textId" component={TopicView} />
           <Route component={NotFound} />
         </Switch>
