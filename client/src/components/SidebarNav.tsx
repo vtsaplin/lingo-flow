@@ -232,7 +232,7 @@ export function SidebarNav() {
             data-testid="link-podcast-feed"
           >
             <Podcast className="h-4 w-4" />
-            <span>Podcast Feed</span>
+            <span>Podcast Feed...</span>
           </a>
           {!selectionMode && (
             <button 
