@@ -79,6 +79,59 @@ ${items.join("\n")}
     }
   });
   
+  app.get("/podcast/topic/:topicId/feed.xml", async (req, res) => {
+    try {
+      const { topicId } = req.params;
+      const topics = await getTopics();
+      const topic = topics.find(t => t.id === topicId);
+      
+      if (!topic) {
+        return res.status(404).send("Topic not found");
+      }
+      
+      const baseUrl = `${req.protocol}://${req.get("host")}`;
+      
+      const items: string[] = [];
+      
+      for (const text of topic.texts) {
+        const guid = `${topic.id}-${text.id}`;
+        const title = text.title;
+        const audioUrl = `${baseUrl}/podcast/audio/${topic.id}/${text.id}.mp3`;
+        const description = text.content.slice(0, 2).join(" ").substring(0, 200);
+        
+        items.push(`
+    <item>
+      <title><![CDATA[${title}]]></title>
+      <description><![CDATA[${description}]]></description>
+      <guid isPermaLink="false">${guid}</guid>
+      <enclosure url="${audioUrl}" type="audio/mpeg" />
+      <pubDate>${new Date().toUTCString()}</pubDate>
+    </item>`);
+      }
+      
+      const rss = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">
+  <channel>
+    <title>LingoFlow - ${topic.title}</title>
+    <description>German texts about ${topic.title} for language learners.</description>
+    <language>de</language>
+    <link>${baseUrl}</link>
+    <itunes:author>LingoFlow</itunes:author>
+    <itunes:category text="Education">
+      <itunes:category text="Language Learning"/>
+    </itunes:category>
+${items.join("\n")}
+  </channel>
+</rss>`;
+      
+      res.setHeader("Content-Type", "application/rss+xml; charset=utf-8");
+      res.send(rss);
+    } catch (error) {
+      console.error("Error generating topic podcast feed:", error);
+      res.status(500).send("Error generating feed");
+    }
+  });
+  
   app.get("/podcast/audio/:topicId/:textId.mp3", async (req, res) => {
     try {
       const { topicId, textId } = req.params;

@@ -96,6 +96,10 @@ export function SidebarNav() {
     return currentPath === `/topic/${topicId}/text/${textId}`;
   };
 
+  const isTopicActive = (topicId: string) => {
+    return currentPath === `/topic/${topicId}`;
+  };
+
   const NavContent = () => (
     <div className="space-y-6 py-6">
       <div className="px-4">
@@ -137,35 +141,45 @@ export function SidebarNav() {
                 const isExpanded = expandedTopics.has(topic.id);
                 const hasActiveText = topic.texts?.some(t => isTextActive(topic.id, t.id));
 
+                const topicActive = isTopicActive(topic.id);
+                
                 return (
                   <Collapsible 
                     key={topic.id} 
                     open={isExpanded || hasActiveText}
-                    onOpenChange={() => toggleTopic(topic.id)}
                   >
-                    <CollapsibleTrigger asChild>
-                      <div 
-                        className="group flex items-center justify-between px-3 py-2.5 rounded-md text-sm transition-colors cursor-pointer text-foreground hover:bg-muted"
-                        data-testid={`topic-${topic.id}`}
-                      >
-                        <div className="flex items-center gap-3 overflow-hidden">
-                          <BookOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
-                          <span className="truncate font-medium">{topic.title}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {hasTexts && (
-                            <span className="text-xs text-muted-foreground">
-                              {topic.texts.length}
-                            </span>
-                          )}
-                          {(isExpanded || hasActiveText) ? (
-                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                          )}
-                        </div>
+                    <div 
+                      className={`group flex items-center justify-between px-3 py-2.5 rounded-md text-sm transition-colors ${
+                        topicActive 
+                          ? "bg-primary text-primary-foreground" 
+                          : "text-foreground hover:bg-muted"
+                      }`}
+                      data-testid={`topic-${topic.id}`}
+                    >
+                      <Link href={`/topic/${topic.id}`} className="flex items-center gap-3 overflow-hidden flex-1 cursor-pointer">
+                        <BookOpen className={`h-4 w-4 shrink-0 ${topicActive ? "text-primary-foreground" : "text-muted-foreground"}`} />
+                        <span className="truncate font-medium">{topic.title}</span>
+                      </Link>
+                      <div className="flex items-center gap-1">
+                        {hasTexts && (
+                          <span className={`text-xs ${topicActive ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                            {topic.texts.length}
+                          </span>
+                        )}
+                        <CollapsibleTrigger asChild>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); toggleTopic(topic.id); }}
+                            className={`p-0.5 rounded hover:bg-black/10 ${topicActive ? "text-primary-foreground" : "text-muted-foreground"}`}
+                          >
+                            {(isExpanded || hasActiveText) ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </button>
+                        </CollapsibleTrigger>
                       </div>
-                    </CollapsibleTrigger>
+                    </div>
                     
                     {hasTexts && (
                       <CollapsibleContent>
