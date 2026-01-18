@@ -57,9 +57,9 @@ export default function Home() {
               <Languages className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-medium text-foreground mb-1">German to Russian</h3>
+              <h3 className="font-medium text-foreground mb-1">Native language support</h3>
               <p className="text-muted-foreground text-sm">
-                All translations and definitions are provided in Russian to help you learn German naturally.
+                All translations and definitions are provided in your native language to help you learn German naturally.
               </p>
             </div>
           </div>
