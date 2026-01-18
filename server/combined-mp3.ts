@@ -22,10 +22,14 @@ interface ChapterInfo {
 
 interface SegmentFiles {
   introFile: string;
+  pauseAfterIntroFile: string;
   beepFile: string;
+  pauseAfterBeepFile: string;
   contentFile: string;
   introDurationMs: number;
+  pauseAfterIntroDurationMs: number;
   beepDurationMs: number;
+  pauseAfterBeepDurationMs: number;
   contentDurationMs: number;
   chapterTitle: string;
 }
@@ -82,8 +86,8 @@ async function generateBeep(outputFile: string): Promise<void> {
     const ffmpeg = spawn("ffmpeg", [
       "-y",
       "-f", "lavfi",
-      "-i", "sine=frequency=800:duration=0.3",
-      "-af", "afade=t=out:st=0.2:d=0.1",
+      "-i", "sine=frequency=800:duration=0.6",
+      "-af", "afade=t=in:st=0:d=0.05,afade=t=out:st=0.4:d=0.2",
       "-c:a", "libmp3lame",
       "-b:a", "128k",
       "-ar", "44100",
@@ -94,6 +98,26 @@ async function generateBeep(outputFile: string): Promise<void> {
     ffmpeg.on("close", (code) => {
       if (code === 0) resolve();
       else reject(new Error(`Beep generation failed with code ${code}`));
+    });
+    ffmpeg.on("error", reject);
+  });
+}
+
+async function generateSilence(outputFile: string, durationSec: number): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const ffmpeg = spawn("ffmpeg", [
+      "-y",
+      "-f", "lavfi",
+      "-i", `anullsrc=r=44100:cl=stereo`,
+      "-t", durationSec.toString(),
+      "-c:a", "libmp3lame",
+      "-b:a", "128k",
+      outputFile
+    ]);
+    
+    ffmpeg.on("close", (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`Silence generation failed with code ${code}`));
     });
     ffmpeg.on("error", reject);
   });
@@ -175,6 +199,16 @@ export async function generateCombinedMp3(selections: TextSelection[]): Promise<
     allTempFiles.push(beepFile);
     const beepDurationMs = await getAudioDurationMs(beepFile);
     
+    const pauseAfterIntroFile = path.join(TEMP_DIR, `pause_intro_${uniqueId}.mp3`);
+    await generateSilence(pauseAfterIntroFile, 0.5);
+    allTempFiles.push(pauseAfterIntroFile);
+    const pauseAfterIntroDurationMs = await getAudioDurationMs(pauseAfterIntroFile);
+    
+    const pauseAfterBeepFile = path.join(TEMP_DIR, `pause_beep_${uniqueId}.mp3`);
+    await generateSilence(pauseAfterBeepFile, 0.7);
+    allTempFiles.push(pauseAfterBeepFile);
+    const pauseAfterBeepDurationMs = await getAudioDurationMs(pauseAfterBeepFile);
+    
     for (let i = 0; i < selections.length; i++) {
       const selection = selections[i];
       const topic = topics.find(t => t.id === selection.topicId);
@@ -198,9 +232,17 @@ export async function generateCombinedMp3(selections: TextSelection[]): Promise<
       allTempFiles.push(introRawFile, introNormFile);
       const introDurationMs = await getAudioDurationMs(introNormFile);
       
+      const pauseAfterIntroCopy = path.join(TEMP_DIR, `pause_intro_${segmentId}.mp3`);
+      await fs.copyFile(pauseAfterIntroFile, pauseAfterIntroCopy);
+      allTempFiles.push(pauseAfterIntroCopy);
+      
       const beepCopyFile = path.join(TEMP_DIR, `beep_${segmentId}.mp3`);
       await fs.copyFile(beepFile, beepCopyFile);
       allTempFiles.push(beepCopyFile);
+      
+      const pauseAfterBeepCopy = path.join(TEMP_DIR, `pause_beep_${segmentId}.mp3`);
+      await fs.copyFile(pauseAfterBeepFile, pauseAfterBeepCopy);
+      allTempFiles.push(pauseAfterBeepCopy);
       
       const fullText = text.content.join(" ");
       const contentBuffer = await getAudioForText(selection.topicId, selection.textId, fullText);
@@ -214,10 +256,14 @@ export async function generateCombinedMp3(selections: TextSelection[]): Promise<
       
       segments.push({
         introFile: introNormFile,
+        pauseAfterIntroFile: pauseAfterIntroCopy,
         beepFile: beepCopyFile,
+        pauseAfterBeepFile: pauseAfterBeepCopy,
         contentFile: contentNormFile,
         introDurationMs,
+        pauseAfterIntroDurationMs,
         beepDurationMs,
+        pauseAfterBeepDurationMs,
         contentDurationMs,
         chapterTitle: `${topic.title} — ${text.title}`
       });
@@ -237,8 +283,14 @@ export async function generateCombinedMp3(selections: TextSelection[]): Promise<
       filesToConcat.push(segment.introFile);
       currentTimeMs += segment.introDurationMs;
       
+      filesToConcat.push(segment.pauseAfterIntroFile);
+      currentTimeMs += segment.pauseAfterIntroDurationMs;
+      
       filesToConcat.push(segment.beepFile);
       currentTimeMs += segment.beepDurationMs;
+      
+      filesToConcat.push(segment.pauseAfterBeepFile);
+      currentTimeMs += segment.pauseAfterBeepDurationMs;
       
       filesToConcat.push(segment.contentFile);
       currentTimeMs += segment.contentDurationMs;
