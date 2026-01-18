@@ -1,9 +1,12 @@
-import { useState, useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Check, RotateCcw, CheckCircle2, XCircle } from "lucide-react";
+import type { WriteModeState } from "./types";
 
 interface WriteModeProps {
   paragraphs: string[];
+  state: WriteModeState;
+  onStateChange: (state: WriteModeState) => void;
 }
 
 interface GapInfo {
@@ -26,16 +29,22 @@ interface GapLookup {
   [gapId: number]: GapInfo;
 }
 
-type ValidationState = "idle" | "correct" | "incorrect";
-
-export function WriteMode({ paragraphs }: WriteModeProps) {
-  const { paragraphData, gapLookup } = useMemo(() => generateWriteGaps(paragraphs), [paragraphs]);
-  
-  const [inputs, setInputs] = useState<Record<number, string>>({});
-  const [validationState, setValidationState] = useState<ValidationState>("idle");
-  const [incorrectGaps, setIncorrectGaps] = useState<Set<number>>(new Set());
+export function WriteMode({ paragraphs, state, onStateChange }: WriteModeProps) {
+  const { paragraphData, gapLookup } = useMemo(
+    () => generateWriteGaps(paragraphs),
+    [paragraphs]
+  );
 
   const totalGaps = Object.keys(gapLookup).length;
+
+  useEffect(() => {
+    if (!state.initialized && totalGaps > 0) {
+      onStateChange({
+        ...state,
+        initialized: true,
+      });
+    }
+  }, [state.initialized, totalGaps, onStateChange, state]);
 
   if (totalGaps === 0) {
     return (
@@ -45,38 +54,47 @@ export function WriteMode({ paragraphs }: WriteModeProps) {
     );
   }
 
+  const { inputs, validationState, incorrectGaps } = state;
+  const incorrectGapsSet = new Set(incorrectGaps);
+
   const handleInputChange = (gapId: number, value: string) => {
-    setInputs(prev => ({ ...prev, [gapId]: value }));
-    setValidationState("idle");
-    setIncorrectGaps(prev => {
-      const next = new Set(prev);
-      next.delete(gapId);
-      return next;
+    const newIncorrect = incorrectGaps.filter((id) => id !== gapId);
+    onStateChange({
+      ...state,
+      inputs: { ...inputs, [gapId]: value },
+      validationState: "idle",
+      incorrectGaps: newIncorrect,
     });
   };
 
   const handleCheck = () => {
     let allCorrect = true;
-    const newIncorrect = new Set<number>();
-    
+    const newIncorrect: number[] = [];
+
     for (const gapId of Object.keys(gapLookup).map(Number)) {
       const gap = gapLookup[gapId];
       const userInput = (inputs[gapId] || "").trim().toLowerCase();
       const expected = gap.original.toLowerCase();
       if (userInput !== expected) {
         allCorrect = false;
-        newIncorrect.add(gapId);
+        newIncorrect.push(gapId);
       }
     }
-    
-    setIncorrectGaps(newIncorrect);
-    setValidationState(allCorrect ? "correct" : "incorrect");
+
+    onStateChange({
+      ...state,
+      incorrectGaps: newIncorrect,
+      validationState: allCorrect ? "correct" : "incorrect",
+    });
   };
 
   const handleReset = () => {
-    setInputs({});
-    setValidationState("idle");
-    setIncorrectGaps(new Set());
+    onStateChange({
+      inputs: {},
+      validationState: "idle",
+      incorrectGaps: [],
+      initialized: true,
+    });
   };
 
   return (
@@ -92,9 +110,9 @@ export function WriteMode({ paragraphs }: WriteModeProps) {
                   }
                   const gapId = item.gapId!;
                   const gap = gapLookup[gapId];
-                  const isIncorrect = incorrectGaps.has(gapId);
+                  const isIncorrect = incorrectGapsSet.has(gapId);
                   const isCorrect = validationState === "correct";
-                  
+
                   return (
                     <span key={tIdx} className="inline-flex items-center mx-1">
                       <input
@@ -134,7 +152,7 @@ export function WriteMode({ paragraphs }: WriteModeProps) {
               <span className="font-medium">Some answers are incorrect. Try again!</span>
             </div>
           )}
-          
+
           <div className="flex gap-2">
             <Button onClick={handleCheck} data-testid="button-check">
               <Check className="h-4 w-4 mr-2" />
@@ -151,40 +169,47 @@ export function WriteMode({ paragraphs }: WriteModeProps) {
   );
 }
 
-function generateWriteGaps(paragraphs: string[]): { 
-  paragraphData: ParagraphData[]; 
+function generateWriteGaps(paragraphs: string[]): {
+  paragraphData: ParagraphData[];
   gapLookup: GapLookup;
 } {
   let gapIdCounter = 0;
   const gapLookup: GapLookup = {};
-  
-  const paragraphData = paragraphs.map(para => {
+
+  const seed = paragraphs.join("").length;
+  let rng = seed;
+  const nextRandom = () => {
+    rng = (rng * 1103515245 + 12345) & 0x7fffffff;
+    return rng / 0x7fffffff;
+  };
+
+  const paragraphData = paragraphs.map((para) => {
     const words = para.split(/(\s+)/);
     const contentWords: { word: string; index: number }[] = [];
-    
+
     words.forEach((w, i) => {
       if (w.trim() && /[a-zA-ZäöüÄÖÜß]/.test(w)) {
         contentWords.push({ word: w, index: i });
       }
     });
-    
+
     if (contentWords.length === 0) {
       return { template: [{ type: "text" as const, content: para }] };
     }
-    
+
     const gapCount = Math.max(1, Math.floor(contentWords.length * 0.25));
     const gapIndices = new Set<number>();
-    
+
     while (gapIndices.size < Math.min(gapCount, contentWords.length)) {
-      const idx = Math.floor(Math.random() * contentWords.length);
+      const idx = Math.floor(nextRandom() * contentWords.length);
       gapIndices.add(idx);
     }
-    
+
     const template: TemplateItem[] = [];
     let currentText = "";
-    
+
     words.forEach((w, i) => {
-      const contentIdx = contentWords.findIndex(cw => cw.index === i);
+      const contentIdx = contentWords.findIndex((cw) => cw.index === i);
       if (contentIdx !== -1 && gapIndices.has(contentIdx)) {
         if (currentText) {
           template.push({ type: "text", content: currentText });
@@ -203,13 +228,13 @@ function generateWriteGaps(paragraphs: string[]): {
         currentText += w;
       }
     });
-    
+
     if (currentText) {
       template.push({ type: "text", content: currentText });
     }
-    
+
     return { template };
   });
-  
+
   return { paragraphData, gapLookup };
 }

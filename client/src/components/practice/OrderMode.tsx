@@ -1,9 +1,12 @@
-import { useState, useMemo, useEffect } from "react";
+import { useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Check, RotateCcw, ChevronLeft, ChevronRight, CheckCircle2, XCircle } from "lucide-react";
+import type { OrderModeState, OrderSentenceState } from "./types";
 
 interface OrderModeProps {
   paragraphs: string[];
+  state: OrderModeState;
+  onStateChange: (state: OrderModeState) => void;
 }
 
 interface Sentence {
@@ -11,22 +14,27 @@ interface Sentence {
   words: string[];
 }
 
-type ValidationState = "idle" | "correct" | "incorrect";
-
-export function OrderMode({ paragraphs }: OrderModeProps) {
+export function OrderMode({ paragraphs, state, onStateChange }: OrderModeProps) {
   const sentences = useMemo(() => extractSentences(paragraphs), [paragraphs]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [shuffledWords, setShuffledWords] = useState<string[]>([]);
-  const [orderedWords, setOrderedWords] = useState<string[]>([]);
-  const [validationState, setValidationState] = useState<ValidationState>("idle");
+  const { currentIndex, sentenceStates } = state;
 
   useEffect(() => {
-    if (sentences.length > 0 && currentIndex < sentences.length) {
-      setShuffledWords(shuffleArray([...sentences[currentIndex].words]));
-      setOrderedWords([]);
-      setValidationState("idle");
+    if (sentences.length > 0 && !state.initialized) {
+      const initialStates: Record<number, OrderSentenceState> = {};
+      sentences.forEach((sentence, idx) => {
+        initialStates[idx] = {
+          shuffledWords: shuffleArray([...sentence.words]),
+          orderedWords: [],
+          validationState: "idle",
+        };
+      });
+      onStateChange({
+        currentIndex: 0,
+        sentenceStates: initialStates,
+        initialized: true,
+      });
     }
-  }, [sentences, currentIndex]);
+  }, [sentences, state.initialized, onStateChange]);
 
   if (sentences.length === 0) {
     return (
@@ -36,23 +44,48 @@ export function OrderMode({ paragraphs }: OrderModeProps) {
     );
   }
 
+  if (!state.initialized) {
+    return null;
+  }
+
   const currentSentence = sentences[currentIndex];
+  const currentState = sentenceStates[currentIndex] || {
+    shuffledWords: [],
+    orderedWords: [],
+    validationState: "idle" as const,
+  };
+  const { shuffledWords, orderedWords, validationState } = currentState;
+
+  const updateCurrentSentenceState = (updates: Partial<OrderSentenceState>) => {
+    onStateChange({
+      ...state,
+      sentenceStates: {
+        ...sentenceStates,
+        [currentIndex]: { ...currentState, ...updates },
+      },
+    });
+  };
 
   const handleWordClick = (word: string, fromOrdered: boolean) => {
     if (fromOrdered) {
       const idx = orderedWords.indexOf(word);
       if (idx !== -1) {
-        setOrderedWords(prev => prev.filter((_, i) => i !== idx));
-        setShuffledWords(prev => [...prev, word]);
+        updateCurrentSentenceState({
+          orderedWords: orderedWords.filter((_, i) => i !== idx),
+          shuffledWords: [...shuffledWords, word],
+          validationState: "idle",
+        });
       }
     } else {
       const idx = shuffledWords.indexOf(word);
       if (idx !== -1) {
-        setShuffledWords(prev => prev.filter((_, i) => i !== idx));
-        setOrderedWords(prev => [...prev, word]);
+        updateCurrentSentenceState({
+          shuffledWords: shuffledWords.filter((_, i) => i !== idx),
+          orderedWords: [...orderedWords, word],
+          validationState: "idle",
+        });
       }
     }
-    setValidationState("idle");
   };
 
   const handleDragStart = (e: React.DragEvent, word: string, fromOrdered: boolean, index: number) => {
@@ -69,26 +102,29 @@ export function OrderMode({ paragraphs }: OrderModeProps) {
 
     if (fromOrdered) {
       if (dropIndex !== undefined && dropIndex !== sourceIndex) {
-        setOrderedWords(prev => {
-          const newArr = [...prev];
-          newArr.splice(sourceIndex, 1);
-          newArr.splice(dropIndex > sourceIndex ? dropIndex - 1 : dropIndex, 0, word);
-          return newArr;
-        });
+        const newArr = [...orderedWords];
+        newArr.splice(sourceIndex, 1);
+        newArr.splice(dropIndex > sourceIndex ? dropIndex - 1 : dropIndex, 0, word);
+        updateCurrentSentenceState({ orderedWords: newArr, validationState: "idle" });
       }
     } else {
-      setShuffledWords(prev => prev.filter((_, i) => i !== sourceIndex));
+      const newShuffled = shuffledWords.filter((_, i) => i !== sourceIndex);
       if (dropIndex !== undefined) {
-        setOrderedWords(prev => {
-          const newArr = [...prev];
-          newArr.splice(dropIndex, 0, word);
-          return newArr;
+        const newOrdered = [...orderedWords];
+        newOrdered.splice(dropIndex, 0, word);
+        updateCurrentSentenceState({
+          shuffledWords: newShuffled,
+          orderedWords: newOrdered,
+          validationState: "idle",
         });
       } else {
-        setOrderedWords(prev => [...prev, word]);
+        updateCurrentSentenceState({
+          shuffledWords: newShuffled,
+          orderedWords: [...orderedWords, word],
+          validationState: "idle",
+        });
       }
     }
-    setValidationState("idle");
   };
 
   const handleDropOnShuffled = (e: React.DragEvent) => {
@@ -98,32 +134,38 @@ export function OrderMode({ paragraphs }: OrderModeProps) {
     const sourceIndex = parseInt(e.dataTransfer.getData("index"));
 
     if (fromOrdered) {
-      setOrderedWords(prev => prev.filter((_, i) => i !== sourceIndex));
-      setShuffledWords(prev => [...prev, word]);
+      updateCurrentSentenceState({
+        orderedWords: orderedWords.filter((_, i) => i !== sourceIndex),
+        shuffledWords: [...shuffledWords, word],
+        validationState: "idle",
+      });
     }
-    setValidationState("idle");
   };
 
   const handleCheck = () => {
     const isCorrect = orderedWords.join(" ") === currentSentence.words.join(" ");
-    setValidationState(isCorrect ? "correct" : "incorrect");
+    updateCurrentSentenceState({
+      validationState: isCorrect ? "correct" : "incorrect",
+    });
   };
 
   const handleReset = () => {
-    setShuffledWords(shuffleArray([...currentSentence.words]));
-    setOrderedWords([]);
-    setValidationState("idle");
+    updateCurrentSentenceState({
+      shuffledWords: shuffleArray([...currentSentence.words]),
+      orderedWords: [],
+      validationState: "idle",
+    });
   };
 
   const handleNext = () => {
     if (currentIndex < sentences.length - 1) {
-      setCurrentIndex(currentIndex + 1);
+      onStateChange({ ...state, currentIndex: currentIndex + 1 });
     }
   };
 
   const handlePrev = () => {
     if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
+      onStateChange({ ...state, currentIndex: currentIndex - 1 });
     }
   };
 
@@ -136,18 +178,18 @@ export function OrderMode({ paragraphs }: OrderModeProps) {
               Sentence {currentIndex + 1} of {sentences.length}
             </span>
             <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="icon" 
+              <Button
+                variant="outline"
+                size="icon"
                 onClick={handlePrev}
                 disabled={currentIndex === 0}
                 data-testid="button-prev-sentence"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button 
-                variant="outline" 
-                size="icon" 
+              <Button
+                variant="outline"
+                size="icon"
                 onClick={handleNext}
                 disabled={currentIndex === sentences.length - 1}
                 data-testid="button-next-sentence"
@@ -158,9 +200,9 @@ export function OrderMode({ paragraphs }: OrderModeProps) {
           </div>
 
           <div className="space-y-6">
-            <div 
+            <div
               className={`min-h-[100px] p-4 rounded-lg border-2 border-dashed transition-colors ${
-                orderedWords.length > 0 
+                orderedWords.length > 0
                   ? validationState === "correct"
                     ? "bg-green-50 dark:bg-green-900/20 border-green-500"
                     : validationState === "incorrect"
@@ -175,7 +217,9 @@ export function OrderMode({ paragraphs }: OrderModeProps) {
               <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Your answer:</p>
               <div className="flex flex-wrap gap-2">
                 {orderedWords.length === 0 && (
-                  <span className="text-muted-foreground text-sm italic">Drag words here in the correct order</span>
+                  <span className="text-muted-foreground text-sm italic">
+                    Drag words here in the correct order
+                  </span>
                 )}
                 {orderedWords.map((word, idx) => (
                   <span
@@ -197,7 +241,7 @@ export function OrderMode({ paragraphs }: OrderModeProps) {
               </div>
             </div>
 
-            <div 
+            <div
               className="min-h-[80px] p-4 rounded-lg bg-muted/50"
               onDrop={handleDropOnShuffled}
               onDragOver={(e) => e.preventDefault()}
@@ -240,7 +284,7 @@ export function OrderMode({ paragraphs }: OrderModeProps) {
               <span className="font-medium">Incorrect order. Try again!</span>
             </div>
           )}
-          
+
           <div className="flex gap-2">
             <Button onClick={handleCheck} data-testid="button-check">
               <Check className="h-4 w-4 mr-2" />
@@ -259,20 +303,20 @@ export function OrderMode({ paragraphs }: OrderModeProps) {
 
 function extractSentences(paragraphs: string[]): Sentence[] {
   const sentences: Sentence[] = [];
-  
-  paragraphs.forEach(para => {
+
+  paragraphs.forEach((para) => {
     const matches = para.match(/[^.!?]+[.!?]+["']?|[^.!?]+$/g) || [para];
-    matches.forEach(sentence => {
+    matches.forEach((sentence) => {
       const trimmed = sentence.trim();
       if (trimmed.length > 0) {
-        const words = trimmed.split(/\s+/).filter(w => w.length > 0);
+        const words = trimmed.split(/\s+/).filter((w) => w.length > 0);
         if (words.length >= 3) {
           sentences.push({ original: trimmed, words });
         }
       }
     });
   });
-  
+
   return sentences;
 }
 

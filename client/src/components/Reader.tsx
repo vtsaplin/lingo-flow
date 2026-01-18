@@ -1,13 +1,14 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Volume2, Loader2, PlayCircle, StopCircle, X, BookOpen, Puzzle, ArrowUpDown, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTTS, useTranslate, useDictionary } from "@/hooks/use-services";
 import { FillMode } from "@/components/practice/FillMode";
 import { OrderMode } from "@/components/practice/OrderMode";
 import { WriteMode } from "@/components/practice/WriteMode";
+import { createInitialPracticeState, type PracticeState, type FillModeState, type OrderModeState, type WriteModeState } from "@/components/practice/types";
 
 type InteractionMode = "word" | "sentence";
 type PracticeMode = "read" | "fill" | "order" | "write";
@@ -28,9 +29,32 @@ export function Reader({ topicId, textId, topicTitle, title, paragraphs }: Reade
   const [slowMode, setSlowMode] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
+  const [practiceState, setPracticeState] = useState<PracticeState>(createInitialPracticeState);
+  const currentTextKey = useRef(`${topicId}-${textId}`);
+
+  useEffect(() => {
+    const newKey = `${topicId}-${textId}`;
+    if (currentTextKey.current !== newKey) {
+      currentTextKey.current = newKey;
+      setPracticeState(createInitialPracticeState());
+    }
+  }, [topicId, textId]);
+  
   const ttsMutation = useTTS();
   const translateMutation = useTranslate();
   const dictionaryMutation = useDictionary();
+
+  const updateFillState = useCallback((newState: FillModeState) => {
+    setPracticeState(prev => ({ ...prev, fill: newState }));
+  }, []);
+
+  const updateOrderState = useCallback((newState: OrderModeState) => {
+    setPracticeState(prev => ({ ...prev, order: newState }));
+  }, []);
+
+  const updateWriteState = useCallback((newState: WriteModeState) => {
+    setPracticeState(prev => ({ ...prev, write: newState }));
+  }, []);
 
   const playAudio = async (text: string) => {
     try {
@@ -311,9 +335,27 @@ export function Reader({ topicId, textId, topicTitle, title, paragraphs }: Reade
           </div>
         )}
 
-        {practiceMode === "fill" && <FillMode paragraphs={paragraphs} />}
-        {practiceMode === "order" && <OrderMode paragraphs={paragraphs} />}
-        {practiceMode === "write" && <WriteMode paragraphs={paragraphs} />}
+        {practiceMode === "fill" && (
+          <FillMode 
+            paragraphs={paragraphs} 
+            state={practiceState.fill}
+            onStateChange={updateFillState}
+          />
+        )}
+        {practiceMode === "order" && (
+          <OrderMode 
+            paragraphs={paragraphs} 
+            state={practiceState.order}
+            onStateChange={updateOrderState}
+          />
+        )}
+        {practiceMode === "write" && (
+          <WriteMode 
+            paragraphs={paragraphs} 
+            state={practiceState.write}
+            onStateChange={updateWriteState}
+          />
+        )}
       </div>
     </div>
   );

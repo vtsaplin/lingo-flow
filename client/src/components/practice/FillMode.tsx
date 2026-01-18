@@ -1,9 +1,12 @@
-import { useState, useMemo, useCallback } from "react";
+import { useMemo, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Check, RotateCcw, CheckCircle2, XCircle } from "lucide-react";
+import type { FillModeState, ValidationState } from "./types";
 
 interface FillModeProps {
   paragraphs: string[];
+  state: FillModeState;
+  onStateChange: (state: FillModeState) => void;
 }
 
 interface GapInfo {
@@ -25,17 +28,23 @@ interface GapLookup {
   [gapId: number]: GapInfo;
 }
 
-type ValidationState = "idle" | "correct" | "incorrect";
-
-export function FillMode({ paragraphs }: FillModeProps) {
-  const { paragraphData, gapLookup, allGapWords } = useMemo(() => generateGaps(paragraphs), [paragraphs]);
-  
-  const [placedWords, setPlacedWords] = useState<Record<number, string | null>>({});
-  const [availableWords, setAvailableWords] = useState<string[]>(() => shuffleArray([...allGapWords]));
-  const [validationState, setValidationState] = useState<ValidationState>("idle");
-  const [incorrectGaps, setIncorrectGaps] = useState<Set<number>>(new Set());
+export function FillMode({ paragraphs, state, onStateChange }: FillModeProps) {
+  const { paragraphData, gapLookup, allGapWords } = useMemo(
+    () => generateGaps(paragraphs),
+    [paragraphs]
+  );
 
   const totalGaps = Object.keys(gapLookup).length;
+
+  useEffect(() => {
+    if (!state.initialized && totalGaps > 0) {
+      onStateChange({
+        ...state,
+        availableWords: shuffleArray([...allGapWords]),
+        initialized: true,
+      });
+    }
+  }, [state.initialized, totalGaps, allGapWords, onStateChange, state]);
 
   if (totalGaps === 0) {
     return (
@@ -44,6 +53,9 @@ export function FillMode({ paragraphs }: FillModeProps) {
       </div>
     );
   }
+
+  const { placedWords, availableWords, validationState, incorrectGaps } = state;
+  const incorrectGapsSet = new Set(incorrectGaps);
 
   const handleDragStart = (e: React.DragEvent, word: string, fromGap?: number) => {
     e.dataTransfer.setData("text/plain", word);
@@ -59,31 +71,33 @@ export function FillMode({ paragraphs }: FillModeProps) {
     const existingWordInTarget = placedWords[gapId];
 
     if (fromGap !== null) {
-      setPlacedWords(prev => {
-        const newPlaced = { ...prev, [gapId]: word };
-        if (fromGap !== gapId) {
-          newPlaced[fromGap] = existingWordInTarget || null;
-        }
-        return newPlaced;
+      const newPlaced = { ...placedWords, [gapId]: word };
+      if (fromGap !== gapId) {
+        newPlaced[fromGap] = existingWordInTarget || null;
+      }
+      onStateChange({
+        ...state,
+        placedWords: newPlaced,
+        validationState: "idle",
+        incorrectGaps: [],
       });
     } else {
-      setPlacedWords(prev => ({ ...prev, [gapId]: word }));
-      
-      setAvailableWords(prev => {
-        let newAvailable = [...prev];
-        const idx = newAvailable.indexOf(word);
-        if (idx !== -1) {
-          newAvailable.splice(idx, 1);
-        }
-        if (existingWordInTarget) {
-          newAvailable.push(existingWordInTarget);
-        }
-        return newAvailable;
+      let newAvailable = [...availableWords];
+      const idx = newAvailable.indexOf(word);
+      if (idx !== -1) {
+        newAvailable.splice(idx, 1);
+      }
+      if (existingWordInTarget) {
+        newAvailable.push(existingWordInTarget);
+      }
+      onStateChange({
+        ...state,
+        placedWords: { ...placedWords, [gapId]: word },
+        availableWords: newAvailable,
+        validationState: "idle",
+        incorrectGaps: [],
       });
     }
-    
-    setValidationState("idle");
-    setIncorrectGaps(new Set());
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -93,36 +107,45 @@ export function FillMode({ paragraphs }: FillModeProps) {
   const handleReturnWord = (gapId: number) => {
     const word = placedWords[gapId];
     if (word) {
-      setAvailableWords(prev => [...prev, word]);
-      setPlacedWords(prev => ({ ...prev, [gapId]: null }));
-      setValidationState("idle");
-      setIncorrectGaps(new Set());
+      onStateChange({
+        ...state,
+        placedWords: { ...placedWords, [gapId]: null },
+        availableWords: [...availableWords, word],
+        validationState: "idle",
+        incorrectGaps: [],
+      });
     }
   };
 
   const handleCheck = () => {
     let allCorrect = true;
-    const newIncorrect = new Set<number>();
-    
+    const newIncorrect: number[] = [];
+
     for (const gapId of Object.keys(gapLookup).map(Number)) {
       const gap = gapLookup[gapId];
       const placed = placedWords[gapId];
       if (placed?.toLowerCase() !== gap.original.toLowerCase()) {
         allCorrect = false;
-        newIncorrect.add(gapId);
+        newIncorrect.push(gapId);
       }
     }
-    
-    setIncorrectGaps(newIncorrect);
-    setValidationState(allCorrect ? "correct" : "incorrect");
+
+    onStateChange({
+      ...state,
+      incorrectGaps: newIncorrect,
+      validationState: allCorrect ? "correct" : "incorrect",
+    });
   };
 
   const handleReset = useCallback(() => {
-    setPlacedWords({});
-    setAvailableWords(shuffleArray([...allGapWords]));
-    setValidationState("idle");
-    setIncorrectGaps(new Set());
-  }, [allGapWords]);
+    onStateChange({
+      placedWords: {},
+      availableWords: shuffleArray([...allGapWords]),
+      validationState: "idle",
+      incorrectGaps: [],
+      initialized: true,
+    });
+  }, [allGapWords, onStateChange]);
 
   return (
     <div className="flex flex-col h-full">
@@ -137,8 +160,8 @@ export function FillMode({ paragraphs }: FillModeProps) {
                   }
                   const gapId = item.gapId!;
                   const placed = placedWords[gapId];
-                  const isIncorrect = incorrectGaps.has(gapId);
-                  
+                  const isIncorrect = incorrectGapsSet.has(gapId);
+
                   return (
                     <span
                       key={tIdx}
@@ -147,7 +170,7 @@ export function FillMode({ paragraphs }: FillModeProps) {
                       onClick={() => placed && handleReturnWord(gapId)}
                       data-testid={`gap-${gapId}`}
                       className={`inline-flex items-center justify-center min-w-[80px] h-8 mx-1 px-2 rounded border-2 border-dashed transition-colors cursor-pointer ${
-                        placed 
+                        placed
                           ? isIncorrect
                             ? "bg-destructive/10 border-destructive text-foreground"
                             : validationState === "correct"
@@ -182,7 +205,7 @@ export function FillMode({ paragraphs }: FillModeProps) {
               <span className="font-medium">Some answers are incorrect. Try again!</span>
             </div>
           )}
-          
+
           <div className="flex flex-wrap gap-2 mb-4 min-h-[44px] p-3 bg-muted/50 rounded-lg">
             {availableWords.length === 0 && (
               <span className="text-muted-foreground text-sm">All words placed</span>
@@ -199,7 +222,7 @@ export function FillMode({ paragraphs }: FillModeProps) {
               </span>
             ))}
           </div>
-          
+
           <div className="flex gap-2">
             <Button onClick={handleCheck} data-testid="button-check">
               <Check className="h-4 w-4 mr-2" />
@@ -216,42 +239,49 @@ export function FillMode({ paragraphs }: FillModeProps) {
   );
 }
 
-function generateGaps(paragraphs: string[]): { 
-  paragraphData: ParagraphData[]; 
-  gapLookup: GapLookup; 
+function generateGaps(paragraphs: string[]): {
+  paragraphData: ParagraphData[];
+  gapLookup: GapLookup;
   allGapWords: string[];
 } {
   let gapIdCounter = 0;
   const gapLookup: GapLookup = {};
   const allGapWords: string[] = [];
-  
-  const paragraphData = paragraphs.map(para => {
+
+  const seed = paragraphs.join("").length;
+  let rng = seed;
+  const nextRandom = () => {
+    rng = (rng * 1103515245 + 12345) & 0x7fffffff;
+    return rng / 0x7fffffff;
+  };
+
+  const paragraphData = paragraphs.map((para) => {
     const words = para.split(/(\s+)/);
     const contentWords: { word: string; index: number }[] = [];
-    
+
     words.forEach((w, i) => {
       if (w.trim() && /[a-zA-ZäöüÄÖÜß]/.test(w)) {
         contentWords.push({ word: w, index: i });
       }
     });
-    
+
     if (contentWords.length === 0) {
       return { template: [{ type: "text" as const, content: para }] };
     }
-    
+
     const gapCount = Math.max(1, Math.floor(contentWords.length * 0.2));
     const gapIndices = new Set<number>();
-    
+
     while (gapIndices.size < Math.min(gapCount, contentWords.length)) {
-      const idx = Math.floor(Math.random() * contentWords.length);
+      const idx = Math.floor(nextRandom() * contentWords.length);
       gapIndices.add(idx);
     }
-    
+
     const template: TemplateItem[] = [];
     let currentText = "";
-    
+
     words.forEach((w, i) => {
-      const contentIdx = contentWords.findIndex(cw => cw.index === i);
+      const contentIdx = contentWords.findIndex((cw) => cw.index === i);
       if (contentIdx !== -1 && gapIndices.has(contentIdx)) {
         if (currentText) {
           template.push({ type: "text", content: currentText });
@@ -270,14 +300,14 @@ function generateGaps(paragraphs: string[]): {
         currentText += w;
       }
     });
-    
+
     if (currentText) {
       template.push({ type: "text", content: currentText });
     }
-    
+
     return { template };
   });
-  
+
   return { paragraphData, gapLookup, allGapWords };
 }
 
