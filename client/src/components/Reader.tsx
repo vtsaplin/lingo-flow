@@ -1,11 +1,16 @@
 import { useState, useRef } from "react";
-import { Volume2, Loader2, PlayCircle, StopCircle, X } from "lucide-react";
+import { Volume2, Loader2, PlayCircle, StopCircle, X, BookOpen, Puzzle, ArrowUpDown, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useTTS, useTranslate, useDictionary } from "@/hooks/use-services";
+import { FillMode } from "@/components/practice/FillMode";
+import { OrderMode } from "@/components/practice/OrderMode";
+import { WriteMode } from "@/components/practice/WriteMode";
 
-type Mode = "word" | "sentence";
+type InteractionMode = "word" | "sentence";
+type PracticeMode = "read" | "fill" | "order" | "write";
 
 interface ReaderProps {
   topicId: string;
@@ -16,7 +21,8 @@ interface ReaderProps {
 }
 
 export function Reader({ topicId, textId, topicTitle, title, paragraphs }: ReaderProps) {
-  const [mode, setMode] = useState<Mode>("sentence");
+  const [practiceMode, setPracticeMode] = useState<PracticeMode>("read");
+  const [interactionMode, setInteractionMode] = useState<InteractionMode>("sentence");
   const [selectedText, setSelectedText] = useState<string | null>(null);
   const [isReadingAll, setIsReadingAll] = useState(false);
   const [slowMode, setSlowMode] = useState(false);
@@ -54,7 +60,7 @@ export function Reader({ topicId, textId, topicTitle, title, paragraphs }: Reade
     
     playAudio(text);
     
-    if (mode === "word") {
+    if (interactionMode === "word") {
       dictionaryMutation.mutate({ word: text });
     } else {
       translateMutation.mutate({ text });
@@ -94,191 +100,221 @@ export function Reader({ topicId, textId, topicTitle, title, paragraphs }: Reade
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-hidden flex flex-col">
-        <div className="px-6 sm:px-8 pt-8 pb-4">
-          <div className="max-w-3xl mx-auto">
-            <div className="flex flex-col gap-4 mb-6">
-              <div className="flex flex-col gap-1">
-                <p className="text-sm text-muted-foreground">{topicTitle}</p>
-                <h1 className="text-2xl sm:text-3xl font-serif font-semibold tracking-tight text-foreground">
-                  {title}
-                </h1>
-              </div>
-              
-              <div className="flex items-center gap-3 flex-wrap">
-                <div className="flex bg-muted p-1 rounded-lg">
-                  <button
-                    onClick={() => setMode("word")}
-                    data-testid="mode-word"
-                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
-                      mode === "word" 
-                        ? "bg-background shadow-sm text-foreground" 
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    Word
-                  </button>
-                  <button
-                    onClick={() => setMode("sentence")}
-                    data-testid="mode-sentence"
-                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
-                      mode === "sentence" 
-                        ? "bg-background shadow-sm text-foreground" 
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    Sentence
-                  </button>
-                </div>
-
-                <div className="flex bg-muted p-1 rounded-lg">
-                  <button
-                    onClick={() => setSlowMode(false)}
-                    data-testid="speed-normal"
-                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
-                      !slowMode 
-                        ? "bg-background shadow-sm text-foreground" 
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    1x
-                  </button>
-                  <button
-                    onClick={() => setSlowMode(true)}
-                    data-testid="speed-slow"
-                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
-                      slowMode 
-                        ? "bg-background shadow-sm text-foreground" 
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    0.7x
-                  </button>
-                </div>
-
-                <Button 
-                  variant="outline" 
-                  onClick={handleReadAll}
-                  disabled={ttsMutation.isPending && isReadingAll}
-                  data-testid="button-read-all"
-                >
-                  {isReadingAll ? (
-                    <>
-                      <StopCircle className="h-4 w-4 mr-2" />
-                      Stop
-                    </>
-                  ) : (
-                    <>
-                      <PlayCircle className="h-4 w-4 mr-2" />
-                      Read All
-                    </>
-                  )}
-                </Button>
-
-              </div>
-            </div>
+      <div className="px-6 sm:px-8 pt-6 pb-4 border-b">
+        <div className="max-w-3xl mx-auto">
+          <div className="flex flex-col gap-1 mb-4">
+            <p className="text-sm text-muted-foreground">{topicTitle}</p>
+            <h1 className="text-2xl sm:text-3xl font-serif font-semibold tracking-tight text-foreground">
+              {title}
+            </h1>
           </div>
+          
+          <Tabs value={practiceMode} onValueChange={(v) => setPracticeMode(v as PracticeMode)}>
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="read" data-testid="tab-read" className="gap-2">
+                <BookOpen className="h-4 w-4" />
+                <span className="hidden sm:inline">Read</span>
+              </TabsTrigger>
+              <TabsTrigger value="fill" data-testid="tab-fill" className="gap-2">
+                <Puzzle className="h-4 w-4" />
+                <span className="hidden sm:inline">Fill</span>
+              </TabsTrigger>
+              <TabsTrigger value="order" data-testid="tab-order" className="gap-2">
+                <ArrowUpDown className="h-4 w-4" />
+                <span className="hidden sm:inline">Order</span>
+              </TabsTrigger>
+              <TabsTrigger value="write" data-testid="tab-write" className="gap-2">
+                <PenLine className="h-4 w-4" />
+                <span className="hidden sm:inline">Write</span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
-
-        <ScrollArea className="flex-1 px-6 sm:px-8">
-          <div className="max-w-3xl mx-auto pb-8">
-            <div className="space-y-6 font-serif prose-text text-foreground/90 text-lg leading-relaxed">
-              {paragraphs.map((para, i) => (
-                <Paragraph 
-                  key={i} 
-                  text={para} 
-                  mode={mode} 
-                  onInteract={handleInteraction}
-                  selectedText={selectedText}
-                />
-              ))}
-            </div>
-          </div>
-        </ScrollArea>
       </div>
 
-      {selectedText && (
-        <div className="border-t bg-card animate-in slide-in-from-bottom-4">
-          <div className="max-w-3xl mx-auto px-6 sm:px-8 py-4">
-            <div className="flex justify-between items-start gap-4 mb-3">
-              <div className="flex items-start gap-3 min-w-0 flex-1">
-                {ttsMutation.isPending && <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0 mt-1" />}
-                <p className="font-serif text-base leading-relaxed break-words">
-                  "{selectedText}"
-                </p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => playAudio(selectedText)}
-                  disabled={ttsMutation.isPending}
-                  data-testid="button-listen"
-                >
-                  {ttsMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Volume2 className="h-4 w-4" />}
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 text-muted-foreground"
-                  onClick={closePanel}
-                  data-testid="button-close-panel"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-
-            <Separator className="my-3" />
-
-            <div className="min-h-[60px]">
-              {(translateMutation.isPending || dictionaryMutation.isPending) && (
-                <div className="flex items-center py-2 text-muted-foreground">
-                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                  <span>{mode === "word" ? "Loading dictionary..." : "Translating..."}</span>
-                </div>
-              )}
-
-              {translateMutation.isSuccess && (
-                <div className="animate-in fade-in">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Translation</p>
-                  <p className="text-base text-foreground">
-                    {translateMutation.data.translation}
-                  </p>
-                </div>
-              )}
-
-              {dictionaryMutation.isSuccess && (
-                <div className="animate-in fade-in space-y-2">
-                  <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className="font-bold">{dictionaryMutation.data.word}</span>
-                    {dictionaryMutation.data.partOfSpeech && (
-                      <span className="text-xs text-muted-foreground italic">{dictionaryMutation.data.partOfSpeech}</span>
-                    )}
-                    <span className="text-muted-foreground">—</span>
-                    <span className="font-medium">{dictionaryMutation.data.translation}</span>
+      <div className="flex-1 overflow-hidden">
+        {practiceMode === "read" && (
+          <div className="flex flex-col h-full">
+            <div className="px-6 sm:px-8 py-4">
+              <div className="max-w-3xl mx-auto">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="flex bg-muted p-1 rounded-lg">
+                    <button
+                      onClick={() => setInteractionMode("word")}
+                      data-testid="mode-word"
+                      className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                        interactionMode === "word" 
+                          ? "bg-background shadow-sm text-foreground" 
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Word
+                    </button>
+                    <button
+                      onClick={() => setInteractionMode("sentence")}
+                      data-testid="mode-sentence"
+                      className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                        interactionMode === "sentence" 
+                          ? "bg-background shadow-sm text-foreground" 
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Sentence
+                    </button>
                   </div>
-                  
-                  {dictionaryMutation.data.definition && (
-                    <p className="text-sm text-muted-foreground">{dictionaryMutation.data.definition}</p>
-                  )}
 
-                  {dictionaryMutation.data.example_de && (
-                    <p className="text-sm italic text-muted-foreground">"{dictionaryMutation.data.example_de}"</p>
-                  )}
+                  <div className="flex bg-muted p-1 rounded-lg">
+                    <button
+                      onClick={() => setSlowMode(false)}
+                      data-testid="speed-normal"
+                      className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                        !slowMode 
+                          ? "bg-background shadow-sm text-foreground" 
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      1x
+                    </button>
+                    <button
+                      onClick={() => setSlowMode(true)}
+                      data-testid="speed-slow"
+                      className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                        slowMode 
+                          ? "bg-background shadow-sm text-foreground" 
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      0.7x
+                    </button>
+                  </div>
+
+                  <Button 
+                    variant="outline" 
+                    onClick={handleReadAll}
+                    disabled={ttsMutation.isPending && isReadingAll}
+                    data-testid="button-read-all"
+                  >
+                    {isReadingAll ? (
+                      <>
+                        <StopCircle className="h-4 w-4 mr-2" />
+                        Stop
+                      </>
+                    ) : (
+                      <>
+                        <PlayCircle className="h-4 w-4 mr-2" />
+                        Read All
+                      </>
+                    )}
+                  </Button>
                 </div>
-              )}
-              
-              {translateMutation.isError && (
-                <p className="text-sm text-destructive">Translation failed. Please try again.</p>
-              )}
-              {dictionaryMutation.isError && (
-                <p className="text-sm text-destructive">Could not find definition.</p>
-              )}
+              </div>
             </div>
+
+            <ScrollArea className="flex-1 px-6 sm:px-8">
+              <div className="max-w-3xl mx-auto pb-8">
+                <div className="space-y-6 font-serif prose-text text-foreground/90 text-lg leading-relaxed">
+                  {paragraphs.map((para, i) => (
+                    <Paragraph 
+                      key={i} 
+                      text={para} 
+                      mode={interactionMode} 
+                      onInteract={handleInteraction}
+                      selectedText={selectedText}
+                    />
+                  ))}
+                </div>
+              </div>
+            </ScrollArea>
+
+            {selectedText && (
+              <div className="border-t bg-card animate-in slide-in-from-bottom-4">
+                <div className="max-w-3xl mx-auto px-6 sm:px-8 py-4">
+                  <div className="flex justify-between items-start gap-4 mb-3">
+                    <div className="flex items-start gap-3 min-w-0 flex-1">
+                      {ttsMutation.isPending && <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0 mt-1" />}
+                      <p className="font-serif text-base leading-relaxed break-words">
+                        "{selectedText}"
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => playAudio(selectedText)}
+                        disabled={ttsMutation.isPending}
+                        data-testid="button-listen"
+                      >
+                        {ttsMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Volume2 className="h-4 w-4" />}
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-muted-foreground"
+                        onClick={closePanel}
+                        data-testid="button-close-panel"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <Separator className="my-3" />
+
+                  <div className="min-h-[60px]">
+                    {(translateMutation.isPending || dictionaryMutation.isPending) && (
+                      <div className="flex items-center py-2 text-muted-foreground">
+                        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                        <span>{interactionMode === "word" ? "Loading dictionary..." : "Translating..."}</span>
+                      </div>
+                    )}
+
+                    {translateMutation.isSuccess && (
+                      <div className="animate-in fade-in">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Translation</p>
+                        <p className="text-base text-foreground">
+                          {translateMutation.data.translation}
+                        </p>
+                      </div>
+                    )}
+
+                    {dictionaryMutation.isSuccess && (
+                      <div className="animate-in fade-in space-y-2">
+                        <div className="flex items-baseline gap-2 flex-wrap">
+                          <span className="font-bold">{dictionaryMutation.data.word}</span>
+                          {dictionaryMutation.data.partOfSpeech && (
+                            <span className="text-xs text-muted-foreground italic">{dictionaryMutation.data.partOfSpeech}</span>
+                          )}
+                          <span className="text-muted-foreground">—</span>
+                          <span className="font-medium">{dictionaryMutation.data.translation}</span>
+                        </div>
+                        
+                        {dictionaryMutation.data.definition && (
+                          <p className="text-sm text-muted-foreground">{dictionaryMutation.data.definition}</p>
+                        )}
+
+                        {dictionaryMutation.data.example_de && (
+                          <p className="text-sm italic text-muted-foreground">"{dictionaryMutation.data.example_de}"</p>
+                        )}
+                      </div>
+                    )}
+                    
+                    {translateMutation.isError && (
+                      <p className="text-sm text-destructive">Translation failed. Please try again.</p>
+                    )}
+                    {dictionaryMutation.isError && (
+                      <p className="text-sm text-destructive">Could not find definition.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
+
+        {practiceMode === "fill" && <FillMode paragraphs={paragraphs} />}
+        {practiceMode === "order" && <OrderMode paragraphs={paragraphs} />}
+        {practiceMode === "write" && <WriteMode paragraphs={paragraphs} />}
+      </div>
     </div>
   );
 }
@@ -290,7 +326,7 @@ function Paragraph({
   selectedText 
 }: { 
   text: string, 
-  mode: Mode, 
+  mode: InteractionMode, 
   onInteract: (t: string, e: React.MouseEvent) => void,
   selectedText: string | null
 }) {

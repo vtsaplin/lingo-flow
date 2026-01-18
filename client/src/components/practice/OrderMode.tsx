@@ -1,0 +1,286 @@
+import { useState, useMemo, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Check, RotateCcw, ChevronLeft, ChevronRight, CheckCircle2, XCircle } from "lucide-react";
+
+interface OrderModeProps {
+  paragraphs: string[];
+}
+
+interface Sentence {
+  original: string;
+  words: string[];
+}
+
+type ValidationState = "idle" | "correct" | "incorrect";
+
+export function OrderMode({ paragraphs }: OrderModeProps) {
+  const sentences = useMemo(() => extractSentences(paragraphs), [paragraphs]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [shuffledWords, setShuffledWords] = useState<string[]>([]);
+  const [orderedWords, setOrderedWords] = useState<string[]>([]);
+  const [validationState, setValidationState] = useState<ValidationState>("idle");
+
+  useEffect(() => {
+    if (sentences.length > 0 && currentIndex < sentences.length) {
+      setShuffledWords(shuffleArray([...sentences[currentIndex].words]));
+      setOrderedWords([]);
+      setValidationState("idle");
+    }
+  }, [sentences, currentIndex]);
+
+  if (sentences.length === 0) {
+    return (
+      <div className="flex flex-col h-full items-center justify-center px-6 py-12">
+        <p className="text-muted-foreground">No sentences could be extracted from this text.</p>
+      </div>
+    );
+  }
+
+  const currentSentence = sentences[currentIndex];
+
+  const handleWordClick = (word: string, fromOrdered: boolean) => {
+    if (fromOrdered) {
+      const idx = orderedWords.indexOf(word);
+      if (idx !== -1) {
+        setOrderedWords(prev => prev.filter((_, i) => i !== idx));
+        setShuffledWords(prev => [...prev, word]);
+      }
+    } else {
+      const idx = shuffledWords.indexOf(word);
+      if (idx !== -1) {
+        setShuffledWords(prev => prev.filter((_, i) => i !== idx));
+        setOrderedWords(prev => [...prev, word]);
+      }
+    }
+    setValidationState("idle");
+  };
+
+  const handleDragStart = (e: React.DragEvent, word: string, fromOrdered: boolean, index: number) => {
+    e.dataTransfer.setData("word", word);
+    e.dataTransfer.setData("fromOrdered", String(fromOrdered));
+    e.dataTransfer.setData("index", String(index));
+  };
+
+  const handleDropOnOrdered = (e: React.DragEvent, dropIndex?: number) => {
+    e.preventDefault();
+    const word = e.dataTransfer.getData("word");
+    const fromOrdered = e.dataTransfer.getData("fromOrdered") === "true";
+    const sourceIndex = parseInt(e.dataTransfer.getData("index"));
+
+    if (fromOrdered) {
+      if (dropIndex !== undefined && dropIndex !== sourceIndex) {
+        setOrderedWords(prev => {
+          const newArr = [...prev];
+          newArr.splice(sourceIndex, 1);
+          newArr.splice(dropIndex > sourceIndex ? dropIndex - 1 : dropIndex, 0, word);
+          return newArr;
+        });
+      }
+    } else {
+      setShuffledWords(prev => prev.filter((_, i) => i !== sourceIndex));
+      if (dropIndex !== undefined) {
+        setOrderedWords(prev => {
+          const newArr = [...prev];
+          newArr.splice(dropIndex, 0, word);
+          return newArr;
+        });
+      } else {
+        setOrderedWords(prev => [...prev, word]);
+      }
+    }
+    setValidationState("idle");
+  };
+
+  const handleDropOnShuffled = (e: React.DragEvent) => {
+    e.preventDefault();
+    const word = e.dataTransfer.getData("word");
+    const fromOrdered = e.dataTransfer.getData("fromOrdered") === "true";
+    const sourceIndex = parseInt(e.dataTransfer.getData("index"));
+
+    if (fromOrdered) {
+      setOrderedWords(prev => prev.filter((_, i) => i !== sourceIndex));
+      setShuffledWords(prev => [...prev, word]);
+    }
+    setValidationState("idle");
+  };
+
+  const handleCheck = () => {
+    const isCorrect = orderedWords.join(" ") === currentSentence.words.join(" ");
+    setValidationState(isCorrect ? "correct" : "incorrect");
+  };
+
+  const handleReset = () => {
+    setShuffledWords(shuffleArray([...currentSentence.words]));
+    setOrderedWords([]);
+    setValidationState("idle");
+  };
+
+  const handleNext = () => {
+    if (currentIndex < sentences.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex-1 overflow-auto px-6 sm:px-8 py-6">
+        <div className="max-w-3xl mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <span className="text-sm text-muted-foreground">
+              Sentence {currentIndex + 1} of {sentences.length}
+            </span>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={handlePrev}
+                disabled={currentIndex === 0}
+                data-testid="button-prev-sentence"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={handleNext}
+                disabled={currentIndex === sentences.length - 1}
+                data-testid="button-next-sentence"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div 
+              className={`min-h-[100px] p-4 rounded-lg border-2 border-dashed transition-colors ${
+                orderedWords.length > 0 
+                  ? validationState === "correct"
+                    ? "bg-green-50 dark:bg-green-900/20 border-green-500"
+                    : validationState === "incorrect"
+                      ? "bg-destructive/10 border-destructive"
+                      : "bg-primary/5 border-primary/30"
+                  : "bg-muted/30 border-muted-foreground/30"
+              }`}
+              onDrop={(e) => handleDropOnOrdered(e)}
+              onDragOver={(e) => e.preventDefault()}
+              data-testid="ordered-area"
+            >
+              <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Your answer:</p>
+              <div className="flex flex-wrap gap-2">
+                {orderedWords.length === 0 && (
+                  <span className="text-muted-foreground text-sm italic">Drag words here in the correct order</span>
+                )}
+                {orderedWords.map((word, idx) => (
+                  <span
+                    key={`${word}-${idx}`}
+                    draggable
+                    onClick={() => handleWordClick(word, true)}
+                    onDragStart={(e) => handleDragStart(e, word, true, idx)}
+                    onDrop={(e) => {
+                      e.stopPropagation();
+                      handleDropOnOrdered(e, idx);
+                    }}
+                    onDragOver={(e) => e.preventDefault()}
+                    data-testid={`ordered-word-${idx}`}
+                    className="px-3 py-1.5 bg-background border rounded-md cursor-grab active:cursor-grabbing hover:bg-accent transition-colors text-base font-serif"
+                  >
+                    {word}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div 
+              className="min-h-[80px] p-4 rounded-lg bg-muted/50"
+              onDrop={handleDropOnShuffled}
+              onDragOver={(e) => e.preventDefault()}
+              data-testid="shuffled-area"
+            >
+              <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Available words:</p>
+              <div className="flex flex-wrap gap-2">
+                {shuffledWords.length === 0 && (
+                  <span className="text-muted-foreground text-sm">All words placed</span>
+                )}
+                {shuffledWords.map((word, idx) => (
+                  <span
+                    key={`${word}-${idx}`}
+                    draggable
+                    onClick={() => handleWordClick(word, false)}
+                    onDragStart={(e) => handleDragStart(e, word, false, idx)}
+                    data-testid={`shuffled-word-${idx}`}
+                    className="px-3 py-1.5 bg-background border rounded-md cursor-grab active:cursor-grabbing hover:bg-accent transition-colors text-base font-serif"
+                  >
+                    {word}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t bg-card px-6 sm:px-8 py-4">
+        <div className="max-w-3xl mx-auto">
+          {validationState === "correct" && (
+            <div className="flex items-center gap-2 mb-4 text-green-600 dark:text-green-400">
+              <CheckCircle2 className="h-5 w-5" />
+              <span className="font-medium">Correct!</span>
+            </div>
+          )}
+          {validationState === "incorrect" && (
+            <div className="flex items-center gap-2 mb-4 text-destructive">
+              <XCircle className="h-5 w-5" />
+              <span className="font-medium">Incorrect order. Try again!</span>
+            </div>
+          )}
+          
+          <div className="flex gap-2">
+            <Button onClick={handleCheck} data-testid="button-check">
+              <Check className="h-4 w-4 mr-2" />
+              Check
+            </Button>
+            <Button variant="outline" onClick={handleReset} data-testid="button-reset">
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Reset
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function extractSentences(paragraphs: string[]): Sentence[] {
+  const sentences: Sentence[] = [];
+  
+  paragraphs.forEach(para => {
+    const matches = para.match(/[^.!?]+[.!?]+["']?|[^.!?]+$/g) || [para];
+    matches.forEach(sentence => {
+      const trimmed = sentence.trim();
+      if (trimmed.length > 0) {
+        const words = trimmed.split(/\s+/).filter(w => w.length > 0);
+        if (words.length >= 3) {
+          sentences.push({ original: trimmed, words });
+        }
+      }
+    });
+  });
+  
+  return sentences;
+}
+
+function shuffleArray<T>(array: T[]): T[] {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
