@@ -5,6 +5,7 @@ import { api } from "@shared/routes";
 import { getTopics, getTopic } from "./content";
 import { translate, dictionary, tts } from "./azure";
 import { registerPodcastRoutes } from "./podcast";
+import { generateCombinedMp3 } from "./combined-mp3";
 import { z } from "zod";
 
 export async function registerRoutes(
@@ -63,6 +64,33 @@ export async function registerRoutes(
   });
 
   registerPodcastRoutes(app);
+
+  const combinedMp3Schema = z.object({
+    texts: z.array(z.object({
+      topicId: z.string(),
+      textId: z.string()
+    }))
+  });
+
+  app.post("/api/download-combined-mp3", async (req, res) => {
+    try {
+      const { texts } = combinedMp3Schema.parse(req.body);
+      
+      if (texts.length === 0) {
+        return res.status(400).json({ message: "No texts selected" });
+      }
+      
+      const audioBuffer = await generateCombinedMp3(texts);
+      
+      res.setHeader("Content-Type", "audio/mpeg");
+      res.setHeader("Content-Disposition", `attachment; filename="lingoflow-${texts.length}-texts.mp3"`);
+      res.setHeader("Content-Length", audioBuffer.length.toString());
+      res.send(audioBuffer);
+    } catch (err) {
+      console.error("Combined MP3 generation failed:", err);
+      res.status(500).json({ message: "Failed to generate combined MP3" });
+    }
+  });
 
   return httpServer;
 }

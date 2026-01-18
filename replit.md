@@ -38,6 +38,15 @@ Preferred communication style: Simple, everyday language.
 - `POST /api/dictionary` - Word dictionary lookup
 - `GET /podcast/feed.xml` - RSS podcast feed
 - `GET /podcast/audio/:topicId/:textId.mp3` - Episode audio with caching
+- `POST /api/download-combined-mp3` - Batch download selected texts as single MP3
+
+### Batch MP3 Download Feature
+- Selection mode in sidebar allows selecting multiple texts/topics
+- Generates combined MP3 with spoken English intros before each text
+- Audio structure: [English intro TTS] → [beep 800Hz 0.3s] → [German content TTS]
+- Uses ffmpeg re-encoding (128kbps libmp3lame) for proper MP3 concatenation
+- ID3v2 CHAP/CTOC tags for VLC chapter support via node-id3 library
+- Temp files tracked and cleaned up after generation
 
 ### Data Flow
 - Shared schemas in `/shared/schema.ts` define types used by both frontend and backend
