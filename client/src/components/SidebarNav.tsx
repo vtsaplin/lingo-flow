@@ -218,16 +218,14 @@ export function SidebarNav() {
             <span>Podcast Feed</span>
           </a>
           {!selectionMode && (
-            <Button 
-              variant="ghost"
-              size="sm"
+            <button 
               onClick={enterSelectionMode}
-              className="mt-2 px-0 h-auto text-sm text-muted-foreground hover:text-foreground"
+              className="mt-3 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
               data-testid="button-enter-selection-mode"
             >
-              <Download className="h-4 w-4 mr-2" />
-              Download MP3...
-            </Button>
+              <Download className="h-4 w-4" />
+              <span>Download MP3...</span>
+            </button>
           )}
         </div>
 
