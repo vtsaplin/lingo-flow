@@ -1,0 +1,107 @@
+PODCAST RSS FEATURE SPEC (MVP, aligned with current app)
+
+Goal
+Provide an RSS podcast feed so the user can subscribe in Apple Podcasts and listen to the generated audio for each learning text.
+
+Scope (MVP)
+
+One RSS feed for the whole app (all topics and texts).
+
+Each podcast episode corresponds to one learning text (one “## …” section inside a topic file).
+
+Audio for podcast episodes is generated on demand and reused on subsequent requests (stable episode audio URL).
+
+Assumptions
+
+Content lives in /content as Markdown files (one file per topic, multiple texts inside).
+
+Source language is German.
+
+The app already has separate endpoints for TTS/translate/dictionary.
+
+Required credentials are stored in Replit Secrets.
+
+Public endpoints (new)
+
+RSS feed
+GET /podcast/feed.xml
+
+Returns:
+
+RSS XML representing a podcast feed.
+
+Contains items for all learning texts across all topics.
+
+Each RSS item includes:
+
+title: "<Topic Title> — <Text Title>"
+
+guid: stable identifier derived from topic + text (must not change across runs)
+
+enclosure:
+
+url: points to the episode audio endpoint (see below)
+
+type: audio/mpeg
+
+length: provided when available (if unknown, may be omitted or set according to implementation constraints)
+
+Episode audio
+GET /podcast/audio/:topicId/:textId.mp3
+
+Returns:
+
+An MP3 audio response for the referenced learning text.
+
+Behavior requirements:
+
+The URL must be stable and reusable (same topicId/textId -> same episode URL).
+
+The server should avoid regenerating audio unnecessarily when the same episode is requested again.
+
+The endpoint must be suitable for podcast clients (reliable repeated access to the same URL).
+
+Episode mapping (data model)
+
+topicId comes from the topic filename (e.g., "01-education.md" -> "education")
+
+textId comes from the “## <Text Title>” section title (slugified)
+
+episode = (topicId, textId)
+
+episode title in RSS = "<Topic Title> — <Text Title>"
+
+episode audio content = the body paragraphs of that text section
+
+UI integration (concept)
+
+Add a single link/button “Podcast feed” in the UI that exposes the feed URL:
+/podcast/feed.xml
+
+No additional UI is required for episode management inside the app.
+
+Non-goals (MVP)
+
+Separate feeds per topic
+
+Chapters/sections inside a single episode
+
+“Full topic” compilation episodes
+
+Detailed storage implementation or specific caching mechanism
+
+Automatic cache invalidation strategy
+
+Done criteria
+
+/podcast/feed.xml returns a valid podcast RSS listing all texts as episodes.
+
+Podcast client can subscribe to the feed.
+
+Playing an episode triggers audio delivery from /podcast/audio/:topicId/:textId.mp3.
+
+Replaying the same episode uses the same stable URL and does not require repeated generation every time.
+
+Credentials are sourced from Replit Secrets.
+
+END OF PODCAST RSS FEATURE SPEC

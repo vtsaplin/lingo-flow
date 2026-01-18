@@ -6,7 +6,8 @@ import {
   Menu, 
   ChevronRight,
   ChevronDown,
-  FileText
+  FileText,
+  Podcast
 } from "lucide-react";
 import { useTopics } from "@/hooks/use-content";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,16 @@ export function SidebarNav() {
         <p className="mt-2 text-sm text-muted-foreground">
           Read. Hear. Understand.
         </p>
+        <a 
+          href="/podcast/feed.xml" 
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-3 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          data-testid="link-podcast-feed"
+        >
+          <Podcast className="h-4 w-4" />
+          <span>Podcast Feed</span>
+        </a>
       </div>
 
       <div className="px-2">

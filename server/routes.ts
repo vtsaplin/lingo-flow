@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { getTopics, getTopic } from "./content";
 import { translate, dictionary, tts } from "./azure";
+import { registerPodcastRoutes } from "./podcast";
 import { z } from "zod";
 
 export async function registerRoutes(
@@ -60,6 +61,8 @@ export async function registerRoutes(
         res.status(500).json({ message: "TTS failed" });
     }
   });
+
+  registerPodcastRoutes(app);
 
   return httpServer;
 }
