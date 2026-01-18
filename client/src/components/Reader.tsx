@@ -155,11 +155,11 @@ export function Reader({ title, paragraphs }: ReaderProps) {
 
       {selectedText && (
         <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-4">
-          <div className="bg-card border shadow-xl rounded-xl p-4 w-80 sm:w-96 max-h-[60vh] overflow-y-auto">
-            <div className="flex justify-between items-start mb-3">
-              <div className="flex items-center gap-2">
-                {ttsMutation.isPending && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
-                <h3 className="font-serif text-lg font-medium leading-tight line-clamp-2 pr-2">
+          <div className="bg-card border shadow-xl rounded-xl p-4 w-[90vw] sm:w-[450px] max-h-[70vh] overflow-y-auto">
+            <div className="flex justify-between items-start mb-3 gap-2">
+              <div className="flex items-start gap-2 min-w-0">
+                {ttsMutation.isPending && <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0 mt-1" />}
+                <h3 className="font-serif text-base font-medium leading-relaxed break-words">
                   "{selectedText}"
                 </h3>
               </div>
