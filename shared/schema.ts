@@ -20,6 +20,7 @@ export type Text = z.infer<typeof textSchema>;
 // API Schemas
 export const ttsRequestSchema = z.object({
   text: z.string(),
+  speed: z.number().min(0.25).max(4.0).optional().default(1.0),
 });
 
 export const translateRequestSchema = z.object({

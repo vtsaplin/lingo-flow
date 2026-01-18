@@ -17,6 +17,7 @@ export function Reader({ topicTitle, title, paragraphs }: ReaderProps) {
   const [mode, setMode] = useState<Mode>("sentence");
   const [selectedText, setSelectedText] = useState<string | null>(null);
   const [isReadingAll, setIsReadingAll] = useState(false);
+  const [slowMode, setSlowMode] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
   const ttsMutation = useTTS();
@@ -29,7 +30,8 @@ export function Reader({ topicTitle, title, paragraphs }: ReaderProps) {
         audioRef.current.pause();
         audioRef.current = null;
       }
-      const blob = await ttsMutation.mutateAsync({ text });
+      const speed = slowMode ? 0.7 : 1.0;
+      const blob = await ttsMutation.mutateAsync({ text, speed });
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
       audioRef.current = audio;
@@ -101,7 +103,7 @@ export function Reader({ topicTitle, title, paragraphs }: ReaderProps) {
                 </h1>
               </div>
               
-              <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-3 flex-wrap">
                 <div className="flex bg-muted p-1 rounded-lg">
                   <button
                     onClick={() => setMode("word")}
@@ -124,6 +126,31 @@ export function Reader({ topicTitle, title, paragraphs }: ReaderProps) {
                     }`}
                   >
                     Sentence
+                  </button>
+                </div>
+
+                <div className="flex bg-muted p-1 rounded-lg">
+                  <button
+                    onClick={() => setSlowMode(false)}
+                    data-testid="speed-normal"
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                      !slowMode 
+                        ? "bg-background shadow-sm text-foreground" 
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    1x
+                  </button>
+                  <button
+                    onClick={() => setSlowMode(true)}
+                    data-testid="speed-slow"
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                      slowMode 
+                        ? "bg-background shadow-sm text-foreground" 
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    0.7x
                   </button>
                 </div>
 

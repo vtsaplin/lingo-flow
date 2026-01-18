@@ -4,8 +4,8 @@ import { z } from "zod";
 
 export function useTTS() {
   return useMutation({
-    mutationFn: async ({ text }: { text: string }) => {
-      const validated = api.services.tts.input.parse({ text });
+    mutationFn: async ({ text, speed = 1.0 }: { text: string; speed?: number }) => {
+      const validated = api.services.tts.input.parse({ text, speed });
       const res = await fetch(api.services.tts.path, {
         method: api.services.tts.method,
         headers: { "Content-Type": "application/json" },
@@ -14,7 +14,6 @@ export function useTTS() {
       
       if (!res.ok) throw new Error("TTS failed");
       
-      // We expect a blob/audio stream, not JSON
       return await res.blob();
     },
   });

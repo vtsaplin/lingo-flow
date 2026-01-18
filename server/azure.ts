@@ -91,7 +91,7 @@ export async function dictionary(word: string): Promise<any> {
   }
 }
 
-export async function tts(text: string): Promise<Buffer | null> {
+export async function tts(text: string, speed: number = 1.0): Promise<Buffer | null> {
   const client = getTTSClient();
   if (!client) return null;
 
@@ -100,6 +100,7 @@ export async function tts(text: string): Promise<Buffer | null> {
       model: "tts-hd",
       voice: "alloy",
       input: text,
+      speed: speed,
     });
     const buffer = Buffer.from(await mp3.arrayBuffer());
     return buffer;
