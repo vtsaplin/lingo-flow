@@ -101,6 +101,9 @@ export function WriteMode({ paragraphs, state, onStateChange }: WriteModeProps) 
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-auto px-6 sm:px-8 py-6">
         <div className="max-w-3xl mx-auto">
+          <p className="text-sm text-muted-foreground mb-4">
+            Type the missing words. The first letter is shown as a hint.
+          </p>
           <div className="space-y-6 font-serif text-lg leading-relaxed text-foreground/90">
             {paragraphData.map((para, pIdx) => (
               <p key={pIdx} className="leading-loose">

@@ -173,6 +173,9 @@ export function OrderMode({ paragraphs, state, onStateChange }: OrderModeProps) 
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-auto px-6 sm:px-8 py-6">
         <div className="max-w-3xl mx-auto">
+          <p className="text-sm text-muted-foreground mb-4">
+            Arrange the words in the correct order to form the sentence. Click or drag words to move them.
+          </p>
           <div className="flex items-center justify-between mb-6">
             <span className="text-sm text-muted-foreground">
               Sentence {currentIndex + 1} of {sentences.length}

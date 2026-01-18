@@ -231,6 +231,9 @@ export function Reader({ topicId, textId, topicTitle, title, paragraphs }: Reade
                     )}
                   </Button>
                 </div>
+                <p className="text-sm text-muted-foreground mt-3">
+                  Click on {interactionMode === "word" ? "words" : "sentences"} to hear pronunciation and see {interactionMode === "word" ? "definitions" : "translations"}.
+                </p>
               </div>
             </div>
 
