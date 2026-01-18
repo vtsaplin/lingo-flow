@@ -1,45 +1,24 @@
+import fs from 'fs/promises';
+import path from 'path';
 import { Topic, Text } from '@shared/schema';
-import { objectStorageClient } from './replit_integrations/object_storage';
 
-// Content is stored in the bucket's public/content folder
-const CONTENT_PREFIX = 'content/';
-
-function getBucketName(): string {
-  const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
-  if (!bucketId) {
-    throw new Error('DEFAULT_OBJECT_STORAGE_BUCKET_ID not set');
-  }
-  return bucketId;
-}
+const CONTENT_DIR = path.join(process.cwd(), 'content');
 
 export async function getTopics(): Promise<Topic[]> {
-  try {
-    const bucket = objectStorageClient.bucket(getBucketName());
-    
-    // List all files in the content folder
-    const [files] = await bucket.getFiles({ prefix: CONTENT_PREFIX });
-    
-    // Filter for .md files and sort
-    const markdownFiles = files
-      .filter(f => f.name.endsWith('.md'))
-      .sort((a, b) => a.name.localeCompare(b.name));
-    
-    const topics: Topic[] = [];
+  const files = await fs.readdir(CONTENT_DIR);
+  const markdownFiles = files.filter(f => f.endsWith('.md')).sort();
+  
+  const topics: Topic[] = [];
 
-    for (const file of markdownFiles) {
-      const [content] = await file.download();
-      const filename = file.name.replace(CONTENT_PREFIX, '');
-      const topic = parseTopic(filename, content.toString('utf-8'));
-      if (topic) {
-        topics.push(topic);
-      }
+  for (const file of markdownFiles) {
+    const content = await fs.readFile(path.join(CONTENT_DIR, file), 'utf-8');
+    const topic = parseTopic(file, content);
+    if (topic) {
+      topics.push(topic);
     }
-
-    return topics;
-  } catch (error) {
-    console.error('Error loading topics from storage:', error);
-    return [];
   }
+
+  return topics;
 }
 
 export async function getTopic(id: string): Promise<Topic | undefined> {
