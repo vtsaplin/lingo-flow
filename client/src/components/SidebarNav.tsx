@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useLayoutEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { 
   BookOpen, 
@@ -64,6 +64,9 @@ export function SidebarNav() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedTexts, setSelectedTexts] = useState<SelectedText[]>([]);
   const [isDownloading, setIsDownloading] = useState(false);
+  
+  const scrollViewportRef = useRef<HTMLDivElement>(null);
+  const savedScrollTop = useRef<number>(0);
 
   const currentPath = location;
 
@@ -94,7 +97,20 @@ export function SidebarNav() {
     return selectedCount > 0 && selectedCount < topic.texts.length;
   };
 
+  const saveScrollPosition = () => {
+    if (scrollViewportRef.current) {
+      savedScrollTop.current = scrollViewportRef.current.scrollTop;
+    }
+  };
+
+  useLayoutEffect(() => {
+    if (scrollViewportRef.current && savedScrollTop.current > 0) {
+      scrollViewportRef.current.scrollTop = savedScrollTop.current;
+    }
+  }, [selectedTexts]);
+
   const toggleTextSelection = (topicId: string, textId: string) => {
+    saveScrollPosition();
     setSelectedTexts(prev => {
       const exists = prev.some(s => s.topicId === topicId && s.textId === textId);
       if (exists) {
@@ -106,6 +122,7 @@ export function SidebarNav() {
   };
 
   const toggleTopicSelection = (topicId: string) => {
+    saveScrollPosition();
     const topic = topics?.find(t => t.id === topicId);
     if (!topic || !topic.texts?.length) return;
     
@@ -241,7 +258,7 @@ export function SidebarNav() {
               ))}
             </div>
           ) : (
-            <ScrollArea className="flex-1">
+            <ScrollArea className="flex-1" viewportRef={scrollViewportRef}>
               <div className="space-y-1 px-1 pb-20">
                 {topics?.map((topic) => {
                   const hasTexts = topic.texts && topic.texts.length > 0;
