@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Volume2, Loader2, PlayCircle, StopCircle, X, BookOpen, Puzzle, ArrowUpDown, PenLine, CheckCircle2 } from "lucide-react";
+import { Volume2, Loader2, PlayCircle, StopCircle, X, BookOpen, Puzzle, ArrowUpDown, PenLine, CheckCircle2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -35,7 +35,7 @@ export function Reader({ topicId, textId, topicTitle, title, paragraphs }: Reade
   const textKey = `${topicId}-${textId}`;
   const [activeTextKey, setActiveTextKey] = useState(textKey);
   
-  const { setModeComplete, getCompletionCount, isTextComplete, getTextProgress } = usePracticeProgress();
+  const { setModeComplete, getCompletionCount, isTextComplete, getTextProgress, resetTextProgress } = usePracticeProgress();
   const completionCount = getCompletionCount(topicId, textId);
   const completionPercentage = Math.round((completionCount / 3) * 100);
   const textComplete = isTextComplete(topicId, textId);
@@ -167,7 +167,7 @@ export function Reader({ topicId, textId, topicTitle, title, paragraphs }: Reade
                 {title}
               </h1>
               {completionCount > 0 && (
-                <div className="flex items-center">
+                <div className="flex items-center gap-1">
                   {textComplete ? (
                     <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
                       <CheckCircle2 className="h-4 w-4" />
@@ -179,6 +179,19 @@ export function Reader({ topicId, textId, topicTitle, title, paragraphs }: Reade
                       <span className="text-xs font-medium text-muted-foreground">{completionCount}/3</span>
                     </div>
                   )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => {
+                      resetTextProgress(topicId, textId);
+                      setPracticeState(createInitialPracticeState());
+                    }}
+                    title="Reset progress"
+                    data-testid="button-reset-progress"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                  </Button>
                 </div>
               )}
             </div>
