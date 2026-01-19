@@ -224,21 +224,24 @@ export function FillMode({ paragraphs, state, onStateChange, isCompleted = false
             </div>
           )}
 
-          <div className="flex flex-wrap gap-2 mb-4 min-h-[44px] p-3 bg-muted/50 rounded-lg">
-            {availableWords.length === 0 && (
-              <span className="text-muted-foreground text-sm">All words placed</span>
-            )}
-            {availableWords.map((word, idx) => (
-              <span
-                key={`${word}-${idx}`}
-                draggable
-                onDragStart={(e) => handleDragStart(e, word)}
-                data-testid={`word-bank-${idx}`}
-                className="px-3 py-1.5 bg-background border rounded-md cursor-grab active:cursor-grabbing hover:bg-accent transition-colors text-sm font-medium"
-              >
-                {word}
-              </span>
-            ))}
+          <div className="min-h-[80px] p-4 rounded-lg bg-muted/50 mb-4">
+            <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Available words:</p>
+            <div className="flex flex-wrap gap-2">
+              {availableWords.length === 0 && (
+                <span className="text-muted-foreground text-sm">All words placed</span>
+              )}
+              {availableWords.map((word, idx) => (
+                <span
+                  key={`${word}-${idx}`}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, word)}
+                  data-testid={`word-bank-${idx}`}
+                  className="px-3 py-1.5 bg-background border rounded-md cursor-grab active:cursor-grabbing hover:bg-accent transition-colors text-base font-serif"
+                >
+                  {word}
+                </span>
+              ))}
+            </div>
           </div>
 
           <div className="flex gap-2">
