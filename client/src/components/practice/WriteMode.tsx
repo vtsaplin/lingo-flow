@@ -7,6 +7,7 @@ interface WriteModeProps {
   paragraphs: string[];
   state: WriteModeState;
   onStateChange: (state: WriteModeState) => void;
+  isCompleted?: boolean;
 }
 
 interface GapInfo {
@@ -29,7 +30,7 @@ interface GapLookup {
   [gapId: number]: GapInfo;
 }
 
-export function WriteMode({ paragraphs, state, onStateChange }: WriteModeProps) {
+export function WriteMode({ paragraphs, state, onStateChange, isCompleted = false }: WriteModeProps) {
   const { paragraphData, gapLookup } = useMemo(
     () => generateWriteGaps(paragraphs),
     [paragraphs]
@@ -39,12 +40,25 @@ export function WriteMode({ paragraphs, state, onStateChange }: WriteModeProps) 
 
   useEffect(() => {
     if (!state.initialized && totalGaps > 0) {
-      onStateChange({
-        ...state,
-        initialized: true,
-      });
+      if (isCompleted) {
+        const correctInputs: Record<number, string> = {};
+        Object.entries(gapLookup).forEach(([id, gap]) => {
+          correctInputs[Number(id)] = gap.original;
+        });
+        onStateChange({
+          ...state,
+          inputs: correctInputs,
+          validationState: "correct",
+          initialized: true,
+        });
+      } else {
+        onStateChange({
+          ...state,
+          initialized: true,
+        });
+      }
     }
-  }, [state.initialized, totalGaps, onStateChange, state]);
+  }, [state.initialized, totalGaps, onStateChange, state, isCompleted, gapLookup]);
 
   if (totalGaps === 0) {
     return (

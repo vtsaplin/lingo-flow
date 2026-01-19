@@ -7,6 +7,7 @@ interface OrderModeProps {
   paragraphs: string[];
   state: OrderModeState;
   onStateChange: (state: OrderModeState) => void;
+  isCompleted?: boolean;
 }
 
 interface Sentence {
@@ -14,7 +15,7 @@ interface Sentence {
   words: string[];
 }
 
-export function OrderMode({ paragraphs, state, onStateChange }: OrderModeProps) {
+export function OrderMode({ paragraphs, state, onStateChange, isCompleted = false }: OrderModeProps) {
   const sentences = useMemo(() => extractSentences(paragraphs), [paragraphs]);
   const { currentIndex, sentenceStates } = state;
 
@@ -22,11 +23,19 @@ export function OrderMode({ paragraphs, state, onStateChange }: OrderModeProps) 
     if (sentences.length > 0 && !state.initialized) {
       const initialStates: Record<number, OrderSentenceState> = {};
       sentences.forEach((sentence, idx) => {
-        initialStates[idx] = {
-          shuffledWords: shuffleArray([...sentence.words]),
-          orderedWords: [],
-          validationState: "idle",
-        };
+        if (isCompleted) {
+          initialStates[idx] = {
+            shuffledWords: [],
+            orderedWords: [...sentence.words],
+            validationState: "correct",
+          };
+        } else {
+          initialStates[idx] = {
+            shuffledWords: shuffleArray([...sentence.words]),
+            orderedWords: [],
+            validationState: "idle",
+          };
+        }
       });
       onStateChange({
         currentIndex: 0,
@@ -34,7 +43,7 @@ export function OrderMode({ paragraphs, state, onStateChange }: OrderModeProps) 
         initialized: true,
       });
     }
-  }, [sentences, state.initialized, onStateChange]);
+  }, [sentences, state.initialized, onStateChange, isCompleted]);
 
   if (sentences.length === 0) {
     return (

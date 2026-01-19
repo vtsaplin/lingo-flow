@@ -7,6 +7,7 @@ interface FillModeProps {
   paragraphs: string[];
   state: FillModeState;
   onStateChange: (state: FillModeState) => void;
+  isCompleted?: boolean;
 }
 
 interface GapInfo {
@@ -28,7 +29,7 @@ interface GapLookup {
   [gapId: number]: GapInfo;
 }
 
-export function FillMode({ paragraphs, state, onStateChange }: FillModeProps) {
+export function FillMode({ paragraphs, state, onStateChange, isCompleted = false }: FillModeProps) {
   const { paragraphData, gapLookup, allGapWords } = useMemo(
     () => generateGaps(paragraphs),
     [paragraphs]
@@ -38,13 +39,27 @@ export function FillMode({ paragraphs, state, onStateChange }: FillModeProps) {
 
   useEffect(() => {
     if (!state.initialized && totalGaps > 0) {
-      onStateChange({
-        ...state,
-        availableWords: shuffleArray([...allGapWords]),
-        initialized: true,
-      });
+      if (isCompleted) {
+        const correctPlacements: Record<number, string> = {};
+        Object.entries(gapLookup).forEach(([id, gap]) => {
+          correctPlacements[Number(id)] = gap.original;
+        });
+        onStateChange({
+          ...state,
+          placedWords: correctPlacements,
+          availableWords: [],
+          validationState: "correct",
+          initialized: true,
+        });
+      } else {
+        onStateChange({
+          ...state,
+          availableWords: shuffleArray([...allGapWords]),
+          initialized: true,
+        });
+      }
     }
-  }, [state.initialized, totalGaps, allGapWords, onStateChange, state]);
+  }, [state.initialized, totalGaps, allGapWords, onStateChange, state, isCompleted, gapLookup]);
 
   if (totalGaps === 0) {
     return (

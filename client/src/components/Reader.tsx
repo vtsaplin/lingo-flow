@@ -399,6 +399,7 @@ export function Reader({ topicId, textId, topicTitle, title, paragraphs }: Reade
             paragraphs={paragraphs} 
             state={practiceState.fill}
             onStateChange={updateFillState}
+            isCompleted={progress.fill}
           />
         )}
         {practiceMode === "order" && (
@@ -406,6 +407,7 @@ export function Reader({ topicId, textId, topicTitle, title, paragraphs }: Reade
             paragraphs={paragraphs} 
             state={practiceState.order}
             onStateChange={updateOrderState}
+            isCompleted={progress.order}
           />
         )}
         {practiceMode === "write" && (
@@ -413,6 +415,7 @@ export function Reader({ topicId, textId, topicTitle, title, paragraphs }: Reade
             paragraphs={paragraphs} 
             state={practiceState.write}
             onStateChange={updateWriteState}
+            isCompleted={progress.write}
           />
         )}
       </div>
