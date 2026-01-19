@@ -189,7 +189,7 @@ export function FillMode({ paragraphs, state, onStateChange, isCompleted = false
                         onDragOver={handleDragOver}
                         onClick={() => placed && handleReturnWord(gapId)}
                         data-testid={`gap-${gapId}`}
-                        className={`inline-flex items-center justify-center min-w-[80px] h-8 mx-1 px-2 rounded border-2 border-dashed transition-colors cursor-pointer ${
+                        className={`inline-flex items-center justify-center min-w-[60px] h-7 mx-0.5 px-2 rounded border-2 border-dashed transition-colors cursor-pointer ${
                           placed
                             ? isIncorrect
                               ? "bg-destructive/10 border-destructive text-foreground"
