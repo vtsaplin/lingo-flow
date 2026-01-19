@@ -171,7 +171,7 @@ export function FillMode({ paragraphs, state, onStateChange, isCompleted = false
               Drag words from the word bank below to fill in the gaps. Click a placed word to return it.
             </p>
             
-            <div className="space-y-6 font-serif text-lg leading-relaxed text-foreground/90 pb-32">
+            <div className="space-y-6 font-serif text-lg leading-relaxed text-foreground/90">
               {paragraphData.map((para, pIdx) => (
                 <p key={pIdx}>
                   {para.template.map((item, tIdx) => {
