@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Volume2, Loader2, PlayCircle, StopCircle, X, BookOpen, Puzzle, ArrowUpDown, PenLine, CheckCircle2, RotateCcw } from "lucide-react";
+import { Volume2, Loader2, PlayCircle, StopCircle, X, BookOpen, Puzzle, ArrowUpDown, PenLine, CheckCircle2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -182,7 +182,7 @@ export function Reader({ topicId, textId, topicTitle, title, paragraphs }: Reade
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6"
+                    className="h-6 w-6 text-muted-foreground hover:text-destructive"
                     onClick={() => {
                       resetTextProgress(topicId, textId);
                       setPracticeState(createInitialPracticeState());
@@ -190,7 +190,7 @@ export function Reader({ topicId, textId, topicTitle, title, paragraphs }: Reade
                     title="Reset progress"
                     data-testid="button-reset-progress"
                   >
-                    <RotateCcw className="h-3 w-3" />
+                    <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
               )}
