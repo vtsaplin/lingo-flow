@@ -32,7 +32,8 @@ export function Reader({ topicId, textId, topicTitle, title, paragraphs }: Reade
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
   const [practiceState, setPracticeState] = useState<PracticeState>(createInitialPracticeState);
-  const currentTextKey = useRef(`${topicId}-${textId}`);
+  const textKey = `${topicId}-${textId}`;
+  const [activeTextKey, setActiveTextKey] = useState(textKey);
   
   const { setModeComplete, getCompletionCount, isTextComplete, getTextProgress } = usePracticeProgress();
   const completionCount = getCompletionCount(topicId, textId);
@@ -41,26 +42,28 @@ export function Reader({ topicId, textId, topicTitle, title, paragraphs }: Reade
   const progress = getTextProgress(topicId, textId);
 
   useEffect(() => {
-    const newKey = `${topicId}-${textId}`;
-    if (currentTextKey.current !== newKey) {
-      currentTextKey.current = newKey;
+    if (activeTextKey !== textKey) {
+      setActiveTextKey(textKey);
       setPracticeState(createInitialPracticeState());
     }
-  }, [topicId, textId]);
+  }, [textKey, activeTextKey]);
 
   useEffect(() => {
+    if (activeTextKey !== textKey) return;
     if (practiceState.fill.validationState === "correct" && !progress.fill) {
       setModeComplete(topicId, textId, "fill");
     }
-  }, [practiceState.fill.validationState, topicId, textId, setModeComplete, progress.fill]);
+  }, [practiceState.fill.validationState, topicId, textId, setModeComplete, progress.fill, activeTextKey, textKey]);
 
   useEffect(() => {
+    if (activeTextKey !== textKey) return;
     if (practiceState.write.validationState === "correct" && !progress.write) {
       setModeComplete(topicId, textId, "write");
     }
-  }, [practiceState.write.validationState, topicId, textId, setModeComplete, progress.write]);
+  }, [practiceState.write.validationState, topicId, textId, setModeComplete, progress.write, activeTextKey, textKey]);
 
   useEffect(() => {
+    if (activeTextKey !== textKey) return;
     const { sentenceStates, initialized } = practiceState.order;
     if (!initialized || !progress) return;
     const sentenceCount = Object.keys(sentenceStates).length;
@@ -69,7 +72,7 @@ export function Reader({ topicId, textId, topicTitle, title, paragraphs }: Reade
     if (allCorrect && !progress.order) {
       setModeComplete(topicId, textId, "order");
     }
-  }, [practiceState.order, topicId, textId, setModeComplete, progress]);
+  }, [practiceState.order, topicId, textId, setModeComplete, progress, activeTextKey, textKey]);
   
   const ttsMutation = useTTS();
   const translateMutation = useTranslate();
@@ -164,16 +167,16 @@ export function Reader({ topicId, textId, topicTitle, title, paragraphs }: Reade
                 {title}
               </h1>
               {completionCount > 0 && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center">
                   {textComplete ? (
-                    <div className="flex items-center gap-1.5 text-green-600 dark:text-green-500">
-                      <CheckCircle2 className="h-5 w-5" />
-                      <span className="text-sm font-medium">Complete</span>
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span className="text-xs font-medium">Complete</span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2">
-                      <Progress value={completionPercentage} className="w-20 h-2" />
-                      <span className="text-sm text-muted-foreground">{completionCount}/3</span>
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-muted">
+                      <Progress value={completionPercentage} className="w-12 h-1.5" />
+                      <span className="text-xs font-medium text-muted-foreground">{completionCount}/3</span>
                     </div>
                   )}
                 </div>
