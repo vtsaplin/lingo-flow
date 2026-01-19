@@ -186,8 +186,7 @@ export function Reader({ topicId, textId, topicTitle, title, paragraphs }: Reade
               <div className="text-center">
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Study</span>
               </div>
-              <div className="col-span-3 flex items-center gap-2">
-                <div className="w-px h-3 bg-border" />
+              <div className="col-span-3 text-center">
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Practice</span>
               </div>
             </div>
