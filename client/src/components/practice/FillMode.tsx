@@ -206,25 +206,8 @@ export function FillMode({ paragraphs, state, onStateChange, isCompleted = false
               </p>
             ))}
           </div>
-        </div>
-      </div>
 
-      <div className="border-t bg-card px-6 sm:px-8 py-4">
-        <div className="max-w-3xl mx-auto">
-          {validationState === "correct" && (
-            <div className="flex items-center gap-2 mb-4 text-green-600 dark:text-green-400">
-              <CheckCircle2 className="h-5 w-5" />
-              <span className="font-medium">All correct!</span>
-            </div>
-          )}
-          {validationState === "incorrect" && (
-            <div className="flex items-center gap-2 mb-4 text-destructive">
-              <XCircle className="h-5 w-5" />
-              <span className="font-medium">Some answers are incorrect. Try again!</span>
-            </div>
-          )}
-
-          <div className="min-h-[80px] p-4 rounded-lg bg-muted/50 mb-4">
+          <div className="min-h-[80px] p-4 rounded-lg bg-muted/50 mt-6">
             <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Available words:</p>
             <div className="flex flex-wrap gap-2">
               {availableWords.length === 0 && (
@@ -243,6 +226,23 @@ export function FillMode({ paragraphs, state, onStateChange, isCompleted = false
               ))}
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="border-t bg-card px-6 sm:px-8 py-4">
+        <div className="max-w-3xl mx-auto">
+          {validationState === "correct" && (
+            <div className="flex items-center gap-2 mb-4 text-green-600 dark:text-green-400">
+              <CheckCircle2 className="h-5 w-5" />
+              <span className="font-medium">All correct!</span>
+            </div>
+          )}
+          {validationState === "incorrect" && (
+            <div className="flex items-center gap-2 mb-4 text-destructive">
+              <XCircle className="h-5 w-5" />
+              <span className="font-medium">Some answers are incorrect. Try again!</span>
+            </div>
+          )}
 
           <div className="flex gap-2">
             <Button onClick={handleCheck} data-testid="button-check">
