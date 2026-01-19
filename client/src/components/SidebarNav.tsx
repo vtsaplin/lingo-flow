@@ -227,26 +227,32 @@ export function SidebarNav() {
           <p className="mt-2 text-sm text-muted-foreground">
             Read. Listen. Practice.
           </p>
-          <a 
-            href="/podcast/feed.xml" 
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            data-testid="link-podcast-feed"
-          >
-            <Podcast className="h-4 w-4" />
-            <span>Podcast Feed...</span>
-          </a>
-          {!selectionMode && (
+          <div className="mt-3 flex items-center gap-3">
+            <a 
+              href="/podcast/feed.xml" 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              data-testid="link-podcast-feed"
+            >
+              <Podcast className="h-4 w-4" />
+              <span>Podcast</span>
+            </a>
+            <span className="text-muted-foreground/30">|</span>
             <button 
               onClick={enterSelectionMode}
-              className="mt-3 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              disabled={selectionMode}
+              className={`flex items-center gap-1.5 text-sm transition-colors ${
+                selectionMode 
+                  ? "text-muted-foreground/40 cursor-not-allowed" 
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
               data-testid="button-enter-selection-mode"
             >
               <Download className="h-4 w-4" />
-              <span>Download MP3...</span>
+              <span>Download</span>
             </button>
-          )}
+          </div>
         </div>
 
         <div className="px-2 flex-1 overflow-hidden flex flex-col">
