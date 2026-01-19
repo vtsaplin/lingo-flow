@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Volume2, Loader2, PlayCircle, StopCircle, X, BookOpen, Puzzle, ArrowUpDown, PenLine, CheckCircle2, Trash2, XCircle, Eraser, RefreshCw, Undo2, ListRestart } from "lucide-react";
+import { Volume2, Loader2, PlayCircle, StopCircle, X, BookOpen, Puzzle, ArrowUpDown, PenLine, CheckCircle2, Eraser } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -179,23 +180,38 @@ export function Reader({ topicId, textId, topicTitle, title, paragraphs }: Reade
                       <span className="text-xs font-medium text-muted-foreground">{completionCount}/3</span>
                     </div>
                   )}
-                  <div className="flex items-center gap-1 ml-2 border-l pl-2">
-                    <Button variant="ghost" size="icon" className="h-6 w-6" title="1. XCircle" onClick={() => { resetTextProgress(topicId, textId); setPracticeState(createInitialPracticeState()); }}>
-                      <XCircle className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" title="2. Eraser" onClick={() => { resetTextProgress(topicId, textId); setPracticeState(createInitialPracticeState()); }}>
-                      <Eraser className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" title="3. RefreshCw" onClick={() => { resetTextProgress(topicId, textId); setPracticeState(createInitialPracticeState()); }}>
-                      <RefreshCw className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" title="4. Undo2" onClick={() => { resetTextProgress(topicId, textId); setPracticeState(createInitialPracticeState()); }}>
-                      <Undo2 className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" title="5. ListRestart" onClick={() => { resetTextProgress(topicId, textId); setPracticeState(createInitialPracticeState()); }}>
-                      <ListRestart className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                        title="Reset progress"
+                        data-testid="button-reset-progress"
+                      >
+                        <Eraser className="h-3.5 w-3.5" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Reset Progress?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will clear all exercise progress for this text. You'll need to complete Fill, Order, and Write exercises again.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => {
+                            resetTextProgress(topicId, textId);
+                            setPracticeState(createInitialPracticeState());
+                          }}
+                        >
+                          Reset
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               )}
             </div>
