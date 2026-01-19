@@ -218,19 +218,21 @@ export function Reader({ topicId, textId, topicTitle, title, paragraphs }: Reade
           </div>
           
           <Tabs value={practiceMode} onValueChange={(v) => setPracticeMode(v as PracticeMode)}>
-            <div className="grid grid-cols-4 mb-1 px-1">
+            <div className="grid grid-cols-[1fr_2px_1fr_1fr_1fr] mb-1 px-1">
               <div className="text-center">
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Study</span>
               </div>
+              <div />
               <div className="col-span-3 text-center">
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Practice</span>
               </div>
             </div>
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-[1fr_2px_1fr_1fr_1fr] gap-0">
               <TabsTrigger value="read" data-testid="tab-study" className="gap-2">
                 <BookOpen className="h-4 w-4" />
                 <span className="hidden sm:inline">Study</span>
               </TabsTrigger>
+              <div className="w-[2px] bg-border my-2 rounded-full" />
               <TabsTrigger value="fill" data-testid="tab-fill" className="gap-1.5">
                 {progress.fill ? <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-500" /> : <Puzzle className="h-4 w-4" />}
                 <span className="hidden sm:inline">Fill</span>
