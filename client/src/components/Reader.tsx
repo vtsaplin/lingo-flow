@@ -182,12 +182,12 @@ export function Reader({ topicId, textId, topicTitle, title, paragraphs }: Reade
           </div>
           
           <Tabs value={practiceMode} onValueChange={(v) => setPracticeMode(v as PracticeMode)}>
-            <div className="flex items-center gap-4 mb-2">
-              <div className="flex items-center gap-2">
+            <div className="grid grid-cols-4 mb-1 px-1">
+              <div className="text-center">
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Study</span>
               </div>
-              <div className="flex-1 flex items-center gap-2">
-                <div className="w-px h-4 bg-border" />
+              <div className="col-span-3 flex items-center gap-2">
+                <div className="w-px h-3 bg-border" />
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Practice</span>
               </div>
             </div>
