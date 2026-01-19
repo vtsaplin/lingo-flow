@@ -131,14 +131,14 @@ export function WriteMode({ paragraphs, state, onStateChange, isCompleted = fals
                   const isCorrect = validationState === "correct";
 
                   return (
-                    <span key={tIdx} className="inline-flex items-center mx-1">
+                    <span key={tIdx} className="inline-flex items-center mx-0.5">
                       <input
                         type="text"
                         value={inputs[gapId] || ""}
                         onChange={(e) => handleInputChange(gapId, e.target.value)}
                         placeholder={gap?.hint || "___"}
                         data-testid={`input-gap-${gapId}`}
-                        className={`inline-block w-28 px-2 py-1 text-center border-b-2 bg-transparent outline-none transition-colors font-serif text-base ${
+                        className={`inline-block w-20 px-1 py-0.5 text-center border-b-2 bg-transparent outline-none transition-colors font-serif text-base ${
                           isIncorrect
                             ? "border-destructive text-destructive"
                             : isCorrect
