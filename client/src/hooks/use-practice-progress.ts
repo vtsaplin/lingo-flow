@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "lingoflow-practice-progress";
 
@@ -12,7 +12,10 @@ interface ProgressStore {
   [key: string]: TextProgress;
 }
 
-function getStoredProgress(): ProgressStore {
+let progressState: ProgressStore = loadFromStorage();
+const listeners = new Set<() => void>();
+
+function loadFromStorage(): ProgressStore {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -22,18 +25,48 @@ function getStoredProgress(): ProgressStore {
   return {};
 }
 
-function saveProgress(progress: ProgressStore) {
+function saveToStorage(progress: ProgressStore) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
   } catch {}
 }
 
-export function usePracticeProgress() {
-  const [progress, setProgress] = useState<ProgressStore>(getStoredProgress);
+function notifyListeners() {
+  listeners.forEach(listener => listener());
+}
 
-  useEffect(() => {
-    saveProgress(progress);
-  }, [progress]);
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function getSnapshot(): ProgressStore {
+  return progressState;
+}
+
+function setModeCompleteInternal(topicId: string, textId: string, mode: "fill" | "order" | "write") {
+  const key = `${topicId}-${textId}`;
+  const current = progressState[key] || { fill: false, order: false, write: false };
+  if (current[mode]) return;
+  
+  progressState = {
+    ...progressState,
+    [key]: { ...current, [mode]: true }
+  };
+  saveToStorage(progressState);
+  notifyListeners();
+}
+
+function resetTextProgressInternal(topicId: string, textId: string) {
+  const key = `${topicId}-${textId}`;
+  const { [key]: _, ...rest } = progressState;
+  progressState = rest;
+  saveToStorage(progressState);
+  notifyListeners();
+}
+
+export function usePracticeProgress() {
+  const progress = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
   const getTextProgress = useCallback((topicId: string, textId: string): TextProgress => {
     const key = `${topicId}-${textId}`;
@@ -41,23 +74,11 @@ export function usePracticeProgress() {
   }, [progress]);
 
   const setModeComplete = useCallback((topicId: string, textId: string, mode: "fill" | "order" | "write") => {
-    const key = `${topicId}-${textId}`;
-    setProgress(prev => {
-      const current = prev[key] || { fill: false, order: false, write: false };
-      if (current[mode]) return prev;
-      return {
-        ...prev,
-        [key]: { ...current, [mode]: true }
-      };
-    });
+    setModeCompleteInternal(topicId, textId, mode);
   }, []);
 
   const resetTextProgress = useCallback((topicId: string, textId: string) => {
-    const key = `${topicId}-${textId}`;
-    setProgress(prev => {
-      const { [key]: _, ...rest } = prev;
-      return rest;
-    });
+    resetTextProgressInternal(topicId, textId);
   }, []);
 
   const getCompletionCount = useCallback((topicId: string, textId: string): number => {

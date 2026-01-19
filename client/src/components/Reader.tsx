@@ -195,20 +195,17 @@ export function Reader({ topicId, textId, topicTitle, title, paragraphs }: Reade
                 <BookOpen className="h-4 w-4" />
                 <span className="hidden sm:inline">Study</span>
               </TabsTrigger>
-              <TabsTrigger value="fill" data-testid="tab-fill" className="gap-2 relative">
-                <Puzzle className="h-4 w-4" />
+              <TabsTrigger value="fill" data-testid="tab-fill" className="gap-1.5">
+                {progress.fill ? <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-500" /> : <Puzzle className="h-4 w-4" />}
                 <span className="hidden sm:inline">Fill</span>
-                {progress.fill && <CheckCircle2 className="h-3 w-3 text-green-600 dark:text-green-500 absolute -top-1 -right-1" />}
               </TabsTrigger>
-              <TabsTrigger value="order" data-testid="tab-order" className="gap-2 relative">
-                <ArrowUpDown className="h-4 w-4" />
+              <TabsTrigger value="order" data-testid="tab-order" className="gap-1.5">
+                {progress.order ? <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-500" /> : <ArrowUpDown className="h-4 w-4" />}
                 <span className="hidden sm:inline">Order</span>
-                {progress.order && <CheckCircle2 className="h-3 w-3 text-green-600 dark:text-green-500 absolute -top-1 -right-1" />}
               </TabsTrigger>
-              <TabsTrigger value="write" data-testid="tab-write" className="gap-2 relative">
-                <PenLine className="h-4 w-4" />
+              <TabsTrigger value="write" data-testid="tab-write" className="gap-1.5">
+                {progress.write ? <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-500" /> : <PenLine className="h-4 w-4" />}
                 <span className="hidden sm:inline">Write</span>
-                {progress.write && <CheckCircle2 className="h-3 w-3 text-green-600 dark:text-green-500 absolute -top-1 -right-1" />}
               </TabsTrigger>
             </TabsList>
           </Tabs>
