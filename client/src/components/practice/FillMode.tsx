@@ -164,67 +164,73 @@ export function FillMode({ paragraphs, state, onStateChange, isCompleted = false
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-auto px-6 sm:px-8 py-6">
-        <div className="max-w-3xl mx-auto space-y-6">
-          <p className="text-sm text-muted-foreground">
-            Drag words from the word bank below to fill in the gaps. Click a placed word to return it.
-          </p>
-          
-          <div className="space-y-6 font-serif text-lg leading-relaxed text-foreground/90">
-            {paragraphData.map((para, pIdx) => (
-              <p key={pIdx}>
-                {para.template.map((item, tIdx) => {
-                  if (item.type === "text") {
-                    return <span key={tIdx}>{item.content}</span>;
-                  }
-                  const gapId = item.gapId!;
-                  const placed = placedWords[gapId];
-                  const isIncorrect = incorrectGapsSet.has(gapId);
+      <div className="flex-1 overflow-auto">
+        <div className="px-6 sm:px-8 py-6">
+          <div className="max-w-3xl mx-auto space-y-6">
+            <p className="text-sm text-muted-foreground">
+              Drag words from the word bank below to fill in the gaps. Click a placed word to return it.
+            </p>
+            
+            <div className="space-y-6 font-serif text-lg leading-relaxed text-foreground/90 pb-32">
+              {paragraphData.map((para, pIdx) => (
+                <p key={pIdx}>
+                  {para.template.map((item, tIdx) => {
+                    if (item.type === "text") {
+                      return <span key={tIdx}>{item.content}</span>;
+                    }
+                    const gapId = item.gapId!;
+                    const placed = placedWords[gapId];
+                    const isIncorrect = incorrectGapsSet.has(gapId);
 
-                  return (
-                    <span
-                      key={tIdx}
-                      onDrop={(e) => handleDrop(e, gapId)}
-                      onDragOver={handleDragOver}
-                      onClick={() => placed && handleReturnWord(gapId)}
-                      data-testid={`gap-${gapId}`}
-                      className={`inline-flex items-center justify-center min-w-[80px] h-8 mx-1 px-2 rounded border-2 border-dashed transition-colors cursor-pointer ${
-                        placed
-                          ? isIncorrect
-                            ? "bg-destructive/10 border-destructive text-foreground"
-                            : validationState === "correct"
-                              ? "bg-green-100 dark:bg-green-900/30 border-green-500 text-foreground"
-                              : "bg-primary/10 border-primary/50 text-foreground"
-                          : "bg-muted/50 border-muted-foreground/30 text-muted-foreground"
-                      }`}
-                      draggable={!!placed}
-                      onDragStart={(e) => placed && handleDragStart(e, placed, gapId)}
-                    >
-                      {placed || "___"}
-                    </span>
-                  );
-                })}
-              </p>
-            ))}
-          </div>
-
-          <div className="min-h-[80px] p-4 rounded-lg bg-muted/50">
-            <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Available words:</p>
-            <div className="flex flex-wrap gap-2">
-              {availableWords.length === 0 && (
-                <span className="text-muted-foreground text-sm">All words placed</span>
-              )}
-              {availableWords.map((word, idx) => (
-                <span
-                  key={`${word}-${idx}`}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, word)}
-                  data-testid={`word-bank-${idx}`}
-                  className="px-3 py-1.5 bg-background border rounded-md cursor-grab active:cursor-grabbing hover:bg-accent transition-colors text-base font-serif"
-                >
-                  {word}
-                </span>
+                    return (
+                      <span
+                        key={tIdx}
+                        onDrop={(e) => handleDrop(e, gapId)}
+                        onDragOver={handleDragOver}
+                        onClick={() => placed && handleReturnWord(gapId)}
+                        data-testid={`gap-${gapId}`}
+                        className={`inline-flex items-center justify-center min-w-[80px] h-8 mx-1 px-2 rounded border-2 border-dashed transition-colors cursor-pointer ${
+                          placed
+                            ? isIncorrect
+                              ? "bg-destructive/10 border-destructive text-foreground"
+                              : validationState === "correct"
+                                ? "bg-green-100 dark:bg-green-900/30 border-green-500 text-foreground"
+                                : "bg-primary/10 border-primary/50 text-foreground"
+                            : "bg-muted/50 border-muted-foreground/30 text-muted-foreground"
+                        }`}
+                        draggable={!!placed}
+                        onDragStart={(e) => placed && handleDragStart(e, placed, gapId)}
+                      >
+                        {placed || "___"}
+                      </span>
+                    );
+                  })}
+                </p>
               ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="sticky bottom-0 z-50 px-6 sm:px-8 py-3 bg-background/95 backdrop-blur-sm border-t">
+          <div className="max-w-3xl mx-auto">
+            <div className="min-h-[60px] p-4 rounded-lg bg-muted/50">
+              <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Available words:</p>
+              <div className="flex flex-wrap gap-2">
+                {availableWords.length === 0 && (
+                  <span className="text-muted-foreground text-sm">All words placed</span>
+                )}
+                {availableWords.map((word, idx) => (
+                  <span
+                    key={`${word}-${idx}`}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, word)}
+                    data-testid={`word-bank-${idx}`}
+                    className="px-3 py-1.5 bg-background border rounded-md cursor-grab active:cursor-grabbing hover:bg-accent transition-colors text-base font-serif"
+                  >
+                    {word}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </div>
